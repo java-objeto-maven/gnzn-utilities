@@ -38,12 +38,28 @@ public class CreatePEF {
                 System.exit(1);
             }
             
-            PEF_Notification trans = new PEF_Notification(instance);
+            PEF_Notification trans;
+            
+            trans = new PEF_Notification(instance);
+            trans.setEvaluationType(EmployeeEvalType.FOR_REGULAR_EOC);
+            trans.setEmployeeType(EmployeeType.PROBATIONARY);
+            trans.setMonthAge(3);
+            
+            JSONObject loJSON;
+            
+            loJSON = trans.NewTransaction();
+            
+            if (((String) loJSON.get("result")).equals("success")){
+                System.out.println((String) loJSON.get("message"));
+            } else {
+                System.err.println((String) loJSON.get("message"));
+                System.exit(1);
+            }
+            
+            trans = new PEF_Notification(instance);
             trans.setEvaluationType(EmployeeEvalType.FOR_REGULAR_EOC);
             trans.setEmployeeType(EmployeeType.PROBATIONARY);
             trans.setMonthAge(4);
-            
-            JSONObject loJSON;
             
             loJSON = trans.NewTransaction();
             

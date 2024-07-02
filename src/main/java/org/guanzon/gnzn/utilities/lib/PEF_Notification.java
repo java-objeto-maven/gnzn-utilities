@@ -173,7 +173,7 @@ public class PEF_Notification {
         
         loJSON = new JSONObject();
         loJSON.put("result", "success");
-        loJSON.put("message", "Notifications created...");
+        loJSON.put("message", "Notifications created for employees on their " + (_months + getSuffix(_months)) + "...");
         return loJSON;
     }
     
@@ -215,7 +215,7 @@ public class PEF_Notification {
                                         "\n<br>" +
                                         "This is a system generated message from the GGC Human Capital Management.\n<br>" +
                                         " \n<br>" +
-                                        "You are hereby notified to give due evaluation & recommendations for " + loRS.getString("xEmployNm") + ", on his " + loRS.getInt("nNoMonths") + getSuffix(loRS.getInt("nNoMonths"))+ " month as probationary. \n<br>" +
+                                        "You are hereby notified to give due evaluation & recommendations for " + loRS.getString("xEmployNm") + ", on his " + loRS.getInt("nNoMonths") + getSuffix(loRS.getInt("nNoMonths")) + " month as probationary. \n<br>" +
                                         "\n<br>" +
                                         "Email the latest PEF to HCM at hr@guanzongroup.com.ph after seeking approval from your Area Head/Department Manager etc. \n<br>" +
                                         "\n<br>" +

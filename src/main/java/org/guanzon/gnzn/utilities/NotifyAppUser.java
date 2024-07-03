@@ -44,14 +44,15 @@ public class NotifyAppUser {
             SendMail mail = new SendMail(System.getProperty("sys.default.path.config"), "gmail");
         
             if (mail.connect(true)){
+                String to;
+                String message;
+                
+                //request forgot password
                 String lsSQL = "SELECT * FROM App_User_Credential_Request" +
                                 " WHERE cTranStat = '0'" +
                                     " AND cNotifyxx = '0'";
 
                 ResultSet loRS = instance.executeQuery(lsSQL);
-
-                String to;
-                String message;
 
                 while(loRS.next()){
                     to = loRS.getString("sEmailAdd");
@@ -62,7 +63,7 @@ public class NotifyAppUser {
 
                     MessageInfo msginfo = new MessageInfo();           
                     msginfo.addTo(to);
-                    msginfo.setSubject("Your Guanzon App Credentials");
+                    msginfo.setSubject("Guanzon App: Credentials");
                     msginfo.setFrom("Guanzon <no-reply@guanzongroup.com.ph>");
                     msginfo.setBody(message);
                     mail.sendMessage(msginfo);
@@ -72,6 +73,86 @@ public class NotifyAppUser {
                                 ", dNotifyxx = " + SQLUtil.toSQL(instance.getServerDate()) +
                                 ", cTranStat = '1'" +
                             " WHERE sTransNox = " + SQLUtil.toSQL(loRS.getString("sTransNox"));
+                    instance.executeUpdate(lsSQL);
+                }
+                
+                //new accounts
+                lsSQL = "SELECT *" + 
+                        " FROM App_User_Master" + 
+                        " WHERE sProdctID IN ('gRider', 'IntegSys', 'GuanzonApp')" +
+                            " AND cEmailSnt <> '1'" + 
+                            " AND cActivatd <> '1'" +
+                            " AND dCreatedx >= '2023-08-01'" +
+                        " ORDER BY dCreatedx DESC" +
+                        " LIMIT 50";
+
+                loRS = instance.executeQuery(lsSQL);
+
+                while (loRS.next()){
+                    to = loRS.getString("sEmailAdd");
+                    message = "Thank you for signing up!" +
+                                "<br><br>Your account has been created. Please click the link below to activate your account." +
+                                "<br><br>https://restgk.guanzongroup.com.ph/security/account_verify.php?email=" + loRS.getString("sEmailAdd") + "&hash=" + loRS.getString("sItIsASIN");
+
+                    MessageInfo msginfo = new MessageInfo();           
+                    msginfo.addTo(to);
+                    msginfo.setSubject("Guanzon App: Verify");
+                    msginfo.setFrom("Guanzon <no-reply@guanzongroup.com.ph>");
+                    msginfo.setBody(message);
+                    mail.sendMessage(msginfo);
+                    
+                    lsSQL = "UPDATE App_User_Master SET" +
+                                "  cEmailSnt = '1'" +
+                                ", nEmailSnt = 1" +
+                            " WHERE sUserIDxx = " + SQLUtil.toSQL(loRS.getString("sUserIDxx"));
+                    instance.executeUpdate(lsSQL);
+                }
+                
+                //update mobile request
+                lsSQL = "SELECT" +
+                            "  a.sTransNox" +
+                            ", a.cReqstCDe" +
+                            ", a.sMobileNo" +
+                            ", a.sSourceCD" +
+                            ", a.sSourceNo" +
+                            ", a.sMobileNo" +
+                            ", IFNULL(c.sFrstName, '') xFrstName" +
+                            ", b.sEmailAdd" +
+                        " FROM Mobile_Update_Request a" +
+                            " LEFT JOIN App_User_Master b ON a.sSourceNo = b.sUserIDxx" +
+                            " LEFT JOIN Client_Master c ON b.sMPlaceID = c.sClientID" +
+                        " WHERE a.sSourceCD = 'SKit'" + 
+                            " AND a.cTranStat = '0'";
+
+                loRS = instance.executeQuery(lsSQL);
+
+                while (loRS.next()){
+                    to = loRS.getString("sEmailAdd");
+
+                    if (loRS.getString("xFrstName").isEmpty()){
+                        message = "Hi!";
+                    } else {
+                        message = "Hi " + loRS.getString("xFrstName") + "!\n\n";
+                    }
+
+                    message += "<br>You have requested to change your mobile number to " + loRS.getString("sMobileNo") + ".\n";
+                    message += "<br><br>If you did not initiate this transaction please inform your UPLINE or contact us on 09171545477 or 09989545477.";
+
+                    MessageInfo msginfo = new MessageInfo();           
+                    msginfo.addTo(to);
+                    msginfo.setSubject("Guanzon App: Update Mobile");
+                    msginfo.setFrom("Guanzon <no-reply@guanzongroup.com.ph>");
+                    msginfo.setBody(message);
+                    mail.sendMessage(msginfo);
+                    
+                    lsSQL = "UPDATE Mobile_Update_Request SET" +
+                                "  cTranStat = '1'" +
+                            " WHERE sTransNox = " + SQLUtil.toSQL(loRS.getString("sTransNox"));
+                    instance.executeUpdate(lsSQL);
+
+                    lsSQL = "UPDATE App_User_Master SET" +
+                                "  sMobileNo = " + SQLUtil.toSQL(loRS.getString("sMobileNo")) +
+                            " WHERE sUserIDxx = " + SQLUtil.toSQL(loRS.getString("sSourceNo"));
                     instance.executeUpdate(lsSQL);
                 }
             } else {

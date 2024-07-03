@@ -187,7 +187,7 @@ public class PEF_Notification {
             return loJSON;
         }
         
-        SendMail mail = new SendMail(System.getProperty("sys.default.path.config"), "GMail");
+        SendMail mail = new SendMail(System.getProperty("sys.default.path.config"), "guanzon");
         
         if (mail.connect(true)){
             try {

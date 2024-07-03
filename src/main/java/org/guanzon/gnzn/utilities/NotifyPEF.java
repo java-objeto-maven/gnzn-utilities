@@ -4,8 +4,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 import org.guanzon.appdriver.base.GRider;
-import org.guanzon.appdriver.constant.EmployeeEvalType;
-import org.guanzon.appdriver.constant.EmployeeType;
 import org.guanzon.gnzn.utilities.lib.PEF_Notification;
 import org.json.simple.JSONObject;
 

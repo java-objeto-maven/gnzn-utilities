@@ -6,5 +6,6 @@ org\guanzon\gnzn\utilities\NotifyPEF.class
 org\guanzon\gnzn\utilities\mail\SendMail$1.class
 org\guanzon\gnzn\utilities\lib\PEF_Notification.class
 org\guanzon\gnzn\utilities\mail\ReadMail$1.class
+org\guanzon\gnzn\utilities\NotifyAppUser.class
 org\guanzon\gnzn\utilities\CreatePEF.class
 org\guanzon\gnzn\utilities\test\testSendMail.class

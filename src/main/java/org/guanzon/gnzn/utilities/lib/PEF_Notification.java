@@ -8,8 +8,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
-import org.guanzon.gnzn.utilities.mail.MessageInfo;
-import org.guanzon.gnzn.utilities.mail.SendMail;
+import org.guanzon.appdriver.mailer.MessageInfo;
+import org.guanzon.appdriver.mailer.SendMail;
 import org.json.simple.JSONObject;
 
 public class PEF_Notification {

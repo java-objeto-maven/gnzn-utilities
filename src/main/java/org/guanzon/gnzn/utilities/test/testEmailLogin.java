@@ -1,14 +1,13 @@
-package org.guanzon.gnzn.utilities;
+package org.guanzon.gnzn.utilities.test;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 import org.guanzon.appdriver.base.GRider;
-import org.guanzon.gnzn.utilities.lib.PEF_Notification;
-import org.json.simple.JSONObject;
+import org.guanzon.appdriver.mailer.SendMail;
 
-public class NotifyPEF {
-    public static void main(String[] args) {
+public class testEmailLogin {
+    public static void main(String [] args){
         String path;
         if(System.getProperty("os.name").toLowerCase().contains("win")){
             path = "D:/GGC_Maven_Systems";
@@ -36,17 +35,10 @@ public class NotifyPEF {
                 System.exit(1);
             }
             
-            PEF_Notification trans = new PEF_Notification(instance);
-            
-            JSONObject loJSON;
+            SendMail mail = new SendMail(System.getProperty("sys.default.path.config"), "guanzon");
+        
+            if (mail.connect(true)){
 
-            loJSON = trans.SendNotifications();
-            
-            if (((String) loJSON.get("result")).equals("success")){
-                System.out.println((String) loJSON.get("message"));
-            } else {
-                System.err.println((String) loJSON.get("message"));
-                System.exit(1);
             }
         } catch (IOException e) {
             System.exit(1);

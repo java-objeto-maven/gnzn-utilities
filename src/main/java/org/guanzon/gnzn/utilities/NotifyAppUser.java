@@ -9,8 +9,8 @@ import javax.mail.MessagingException;
 import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.MySQLAESCrypt;
 import org.guanzon.appdriver.base.SQLUtil;
-import org.guanzon.gnzn.utilities.mail.MessageInfo;
-import org.guanzon.gnzn.utilities.mail.SendMail;
+import org.guanzon.appdriver.mailer.MessageInfo;
+import org.guanzon.appdriver.mailer.SendMail;
 
 public class NotifyAppUser {
     public static void main (String [] args){
@@ -32,7 +32,7 @@ public class NotifyAppUser {
             if (po_props.getProperty("developer.mode").equals("1")){
                 instance = new GRider("gRider");
         
-                if (!instance.logUser("gRider", "M001111122")){
+                if (!instance.logUser("gRider", "M001000001")){
                     System.err.println(instance.getErrMsg());
                     System.exit(1);
                 }

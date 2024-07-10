@@ -29,7 +29,7 @@ public class CreatePEF {
             if (po_props.getProperty("developer.mode").equals("1")){
                 instance = new GRider("gRider");
         
-                if (!instance.logUser("gRider", "M001111122")){
+                if (!instance.logUser("gRider", "M001000001")){
                     System.err.println(instance.getErrMsg());
                     System.exit(1);
                 }

@@ -1,4 +1,4 @@
-package org.guanzon.gnzn.utilities.lib;
+package org.guanzon.gnzn.utilities.lib.hcm;
 
 import java.io.IOException;
 import java.sql.ResultSet;

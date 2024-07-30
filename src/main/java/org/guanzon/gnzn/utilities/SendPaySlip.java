@@ -1,6 +1,5 @@
 package org.guanzon.gnzn.utilities;
 
-import com.sun.mail.smtp.SMTPAddressFailedException;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -8,7 +7,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
 import javax.mail.MessagingException;
-import javax.mail.SendFailedException;
 import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.LogWrapper;
 import org.guanzon.appdriver.base.MiscUtil;
@@ -79,7 +77,7 @@ public class SendPaySlip {
                     
                     while(rsToSend.next()){
                         String lsEmail;
-
+                        
                         //reroute email to branch and department email...
                         if(rsToSend.getString("sEmailAdd").isEmpty()){
                             if(rsToSend.getString("sBranchCD").equalsIgnoreCase("M029") && 

@@ -4,11 +4,16 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 import org.guanzon.appdriver.base.GRider;
-import org.guanzon.gnzn.utilities.lib.hcm.PEF_Notification;
-import org.json.simple.JSONObject;
+import org.guanzon.appdriver.base.LogWrapper;
+import org.guanzon.appdriver.base.SQLUtil;
+import org.guanzon.gnzn.utilities.lib.hcm.ILoveMyJob;
+import org.guanzon.gnzn.utilities.lib.hcm.ILoveMyJobValidator;
 
-public class NotifyPEF {
+public class CreateILMJ {
     public static void main(String[] args) {
+        LogWrapper logwrapr = new LogWrapper("CreateILMJ", "gnzn-utilities.log");
+        logwrapr.info("Start of Process!");
+        
         String path;
         if(System.getProperty("os.name").toLowerCase().contains("win")){
             path = "D:/GGC_Maven_Systems";
@@ -36,18 +41,20 @@ public class NotifyPEF {
                 System.exit(1);
             }
             
-            PEF_Notification trans = new PEF_Notification(instance);
+            ILoveMyJobValidator utility;
             
-            JSONObject loJSON;
+            utility = ILoveMyJob.make(ILoveMyJob.Type.EMPLOYEE);
+            utility.setGRider(instance);
+            utility.setWithParent(true);
 
-            loJSON = trans.SendNotifications();
-            
-            if (((String) loJSON.get("result")).equals("success")){
-                System.out.println((String) loJSON.get("message"));
-            } else {
-                System.err.println((String) loJSON.get("message"));
+            if (!utility.Run("MX01", SQLUtil.dateFormat(instance.getServerDate(), SQLUtil.FORMAT_SHORT_DATE), "")){
+                System.err.println(utility.getMessage());
+                logwrapr.info("Error!!!");
                 System.exit(1);
             }
+            
+            System.out.print("Raffle entries created successfully.");
+            
         } catch (IOException e) {
             System.exit(1);
         }

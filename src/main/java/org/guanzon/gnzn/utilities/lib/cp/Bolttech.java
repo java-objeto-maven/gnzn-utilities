@@ -1,13 +1,36 @@
 package org.guanzon.gnzn.utilities.lib.cp;
 
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
+import com.jcraft.jsch.SftpException;
+import com.opencsv.CSVWriter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Iterator;
+import java.util.Properties;
 import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 public class Bolttech {
+    private final String UPLOAD = System.getProperty("sys.default.path.config") + "/temp/Bolttech/upload/";
+    private final String SUCCESS = System.getProperty("sys.default.path.config") + "/temp/Bolttech/success/";
+    private final String FAILED = System.getProperty("sys.default.path.config") + "/temp/Bolttech/failed/";
+    private final String REMOTE = "/uat/sales/unprocessed/";
+    
     GRider _instance;
     
     public Bolttech(GRider foValue){
@@ -16,7 +39,7 @@ public class Bolttech {
     
     public JSONObject NewTransaction(){
         String lsSQL;
-        JSONObject loJSON;
+        JSONObject loJSON = new JSONObject();
         
         //get transactions that is not yet extracted
         lsSQL = getSQ_Master();
@@ -35,7 +58,7 @@ public class Bolttech {
                 if (loDetail.next()){
                     loJSONDet = new JSONObject();
                     
-                    for (int lnCtr = 0; lnCtr <= loDetail.getMetaData().getColumnCount() -1; lnCtr++){
+                    for (int lnCtr = 1; lnCtr <= loDetail.getMetaData().getColumnCount(); lnCtr++){
                         loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), loDetail.getObject(lnCtr));
                     }
                     
@@ -44,16 +67,22 @@ public class Bolttech {
                             ", dTransact = " + SQLUtil.toSQL(_instance.getServerDate()) +
                             ", sSourceNo = " + SQLUtil.toSQL(loRS.getString("sTransNox")) +
                             ", sStockIDx = " + SQLUtil.toSQL(loRS.getString("sStockIDx")) +
-                            ", sPayloadx = " + SQLUtil.toSQL(loJSONDet);
+                            ", sPayloadx = " + SQLUtil.toSQL(loJSONDet.toJSONString()) +
+                            ", sModified = " + SQLUtil.toSQL(_instance.getUserID());
+                    
+                    if (_instance.executeUpdate(lsSQL) <= 0){
+                        loJSON.put("result", "error");
+                        loJSON.put("message", _instance.getMessage() + "; " + _instance.getErrMsg());
+                        return loJSON;
+                    }
                 }
             }
         } catch (SQLException e) {
-            loJSON = new JSONObject();
             loJSON.put("result", "error");
             loJSON.put("message", e.getMessage());
+            return loJSON;
         }
         
-        loJSON = new JSONObject();
         loJSON.put("result", "success");
         loJSON.put("message", "Transactions exported successfully.");
         
@@ -62,14 +91,159 @@ public class Bolttech {
     
     public JSONObject CreateCSV(){
         JSONObject loJSON = new JSONObject();
+        JSONParser loParser = new JSONParser();
         
+        String lsSQL = getSQ_Batch();
+        
+        ResultSet loRS = _instance.executeQuery(lsSQL);
+        
+        if (MiscUtil.RecordCount(loRS) <= 0){
+            loJSON.put("result", "error");
+            loJSON.put("message", "No data to extract.");
+            return loJSON;
+        }
+        
+        String lsTransNox = MiscUtil.getNextCode("Bolttech", "sBatchNox", true, _instance.getConnection(), _instance.getBranchCode());
+        String loFilename = UPLOAD + lsTransNox + ".csv";
+        
+        try (CSVWriter writer = new CSVWriter(new FileWriter(loFilename))) {
+            int lnCtr = 0;
+            while(loRS.next()){
+                lsSQL = "INSERT INTO Bolttech SET" + 
+                        "  sBatchNox = " + SQLUtil.toSQL(lsTransNox) +
+                        ", dCreatedx = " + SQLUtil.toSQL(SQLUtil.dateFormat(_instance.getServerDate(), SQLUtil.FORMAT_TIMESTAMP)) +
+                        ", cTranStat = '0'";
+                
+                if (_instance.executeUpdate(lsSQL) <= 0) {
+                    loJSON.put("result", "error");
+                    loJSON.put("message", _instance.getMessage() + "; " + _instance.getErrMsg());
+                    return loJSON;
+                }
+                
+                loJSON = (JSONObject) loParser.parse(loRS.getString("sPayloadx"));
+                
+                Iterator<?> keys = loJSON.keySet().iterator();
+                
+                if (lnCtr == 0){
+                    // Write header
+                    String [] header = new String[loJSON.size()];
+                    
+                    int i = 0;
+                    while (keys.hasNext()) {
+                        header[i++] = (String) keys.next();
+                    }
+                    
+                    writer.writeNext(header);
+                    lnCtr++;
+                }
+                
+                // Write details
+                String [] row = new String[loJSON.size()];
+                
+                int i = 0;
+                for (Object key : loJSON.keySet()) {
+                    row[i++] = loJSON.get(key).toString();
+                }
+                writer.writeNext(row);
+                
+                lsSQL = "UPDATE CP_SO_Insurance SET" +
+                            "  cTranStat = '1'" +
+                            ", sBatchNox = " + SQLUtil.toSQL(lsTransNox) +
+                        " WHERE sTransNox = " + SQLUtil.toSQL(loRS.getString("sTransNox"));
+                
+                if (_instance.executeUpdate(lsSQL) <= 0) {
+                    loJSON.put("result", "error");
+                    loJSON.put("message", _instance.getMessage() + "; " + _instance.getErrMsg());
+                    return loJSON;
+                }
+            }
+            
+            System.out.println("CSV file created successfully.");
+        } catch (IOException | SQLException | ParseException e) {
+            loJSON = new JSONObject();
+            loJSON.put("result", "error");
+            loJSON.put("message", e.getMessage());
+            return loJSON;
+        }
+        
+        loJSON.put("result", "success");
+        loJSON.put("message", "Transactions exported successfully.");
         return loJSON;
     }
     
     public JSONObject UploadFile(){
         JSONObject loJSON = new JSONObject();
         
+        try {
+            loadConfig();
+            
+            Session session = null;
+            ChannelSftp channelSftp = null;
+            
+            JSch jsch = new JSch();
+            jsch.addIdentity(System.getProperty("bolttech.pkey"));
+            session = jsch.getSession(System.getProperty("bolttech.user"), 
+                                            System.getProperty("bolttech.host"), 
+                                            Integer.parseInt(System.getProperty("bolttech.port")));
+
+            Properties config = new Properties();
+            config.put("StrictHostKeyChecking", "no");
+            session.setConfig(config);
+
+            session.connect();
+
+            channelSftp = (ChannelSftp) session.openChannel("sftp");
+            channelSftp.connect();
+            
+            String lsSQL = "SELECT sBatchNox, cTranStat" +
+                            " FROM Bolttech" +
+                            " WHERE cTranStat IN ('0', '3')";
+            
+            ResultSet loRS = _instance.executeQuery(lsSQL);
+            
+            while (loRS.next()){
+                String lsSRC;
+                if (loRS.getString("cTranStat").equals("0")){
+                    lsSRC = UPLOAD;
+                } else{
+                    lsSRC = FAILED;
+                }
+                
+                try (FileInputStream fis = new FileInputStream(lsSRC + loRS.getString("sBatchNox") + ".csv")) {
+                    channelSftp.put(fis, REMOTE + loRS.getString("sBatchNox") + ".csv");
+                }
+                
+                lsSQL = "UPDATE Bolttech SET cTranStat = '1' WHERE sBatchNox = " + SQLUtil.toSQL(loRS.getString("sBatchNox"));
+                if (_instance.executeUpdate(lsSQL) <= 0) {
+                    loJSON.put("result", "error");
+                    loJSON.put("message", _instance.getMessage() + "; " + _instance.getErrMsg());
+                    return loJSON;
+                }
+
+                Path sourcePath = Paths.get(lsSRC + loRS.getString("sBatchNox") + ".csv");
+                Path destinationPath = Paths.get(SUCCESS + loRS.getString("sBatchNox") + ".csv");
+                Files.move(sourcePath, destinationPath, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (JSchException | SftpException | IOException | SQLException e) {
+            loJSON = new JSONObject();
+            loJSON.put("result", "error");
+            loJSON.put("message", e.getMessage());
+            return loJSON;
+        }
+        
+        loJSON.put("result", "success");
+        loJSON.put("message", "Files uploaded successfully.");
         return loJSON;
+    }
+    
+    private void loadConfig() throws IOException{
+        Properties props = new Properties();
+        props.load(new FileInputStream(System.getProperty("sys.default.path.config") + "/config/maven.properties"));
+        
+        System.setProperty("bolttech.port", props.getProperty("bolttech.port"));
+        System.setProperty("bolttech.host", props.getProperty("bolttech.host"));
+        System.setProperty("bolttech.user", props.getProperty("bolttech.user"));
+        System.setProperty("bolttech.pkey", System.getProperty("sys.default.path.config") + "/config/" + props.getProperty("bolttech.pkey"));
     }
     
     private String getSQ_Master(){
@@ -84,8 +258,8 @@ public class Bolttech {
                         " LEFT JOIN CP_Inventory c ON b.sStockIDx = c.sStockIDx" +
                         " LEFT JOIN Category d ON c.sCategID1 = d.sCategrID" +
                 " WHERE a.sTransNox = b.sTransNox" +
-                    " AND a.cTranStat <> '3'" +
-                    " AND a.dTransact > '2024-06-27'" +
+                    " AND a.cTranStat IN ('3', '7')" +
+                    " AND a.dTransact >= '2024-06-27'" +
                 " HAVING c.sCategID1 = 'C001052'" +
                     " AND xTransNox IS NULL";
     }
@@ -140,7 +314,14 @@ public class Bolttech {
                 " WHERE a.sTransNox = b.sTransNox" + 
                     " AND b.sStockIDx = c.sStockIDx" + 
                     " AND LEFT(a.sTransNox,4) = d.sBranchCd" + 
-                    " AND a.cTranStat <> 3" +
+                    " AND a.cTranStat IN ('3', '7')" +
                 " HAVING PRODUCT_NAME = 'Units'";
+    }
+    
+    private String getSQ_Batch(){
+        return "SELECT *" +
+                " FROM CP_SO_Insurance" +
+                " WHERE cTranStat = '0'" +
+                    " AND sBatchNox IS NULL";
     }
 }

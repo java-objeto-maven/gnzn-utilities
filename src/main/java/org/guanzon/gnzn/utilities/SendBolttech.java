@@ -4,11 +4,14 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 import org.guanzon.appdriver.base.GRider;
+import org.guanzon.appdriver.base.LogWrapper;
 import org.guanzon.gnzn.utilities.lib.cp.Bolttech;
 import org.json.simple.JSONObject;
 
 public class SendBolttech {
     public static void main(String[] args) {
+        LogWrapper logwrapr = new LogWrapper("SendBolttech", "bolttech.log");
+        
         String path;
         if(System.getProperty("os.name").toLowerCase().contains("win")){
             path = "D:/GGC_Maven_Systems";
@@ -40,23 +43,22 @@ public class SendBolttech {
             
             JSONObject json;
             
-//            json = trans.NewTransaction();
-//            
-//            if (!((String) json.get("result")).equals("success")){
-//                System.err.println((String) json.get("message"));
-//                System.exit(1);
-//            } 
-//            
-//            json = trans.CreateCSV();
-//            if (!((String) json.get("result")).equals("success")){
-//                System.err.println((String) json.get("message"));
-//                System.exit(1);
-//            }
+            json = trans.NewTransaction();
+            
+            if (!((String) json.get("result")).equals("success")){
+                logwrapr.severe((String) json.get("message"));
+            } 
+            
+            json = trans.CreateCSV();
+            
+            if (!((String) json.get("result")).equals("success")){
+                logwrapr.severe((String) json.get("message"));
+            }
             
             json = trans.UploadFile();
+            
             if (!((String) json.get("result")).equals("success")){
-                System.err.println((String) json.get("message"));
-                System.exit(1);
+                logwrapr.severe((String) json.get("message"));
             }
         } catch (IOException e) {
             System.exit(1);

@@ -7,7 +7,6 @@ import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
 import com.opencsv.CSVWriter;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,7 +28,6 @@ public class Bolttech {
     private final String UPLOAD = System.getProperty("sys.default.path.config") + "/temp/Bolttech/upload/";
     private final String SUCCESS = System.getProperty("sys.default.path.config") + "/temp/Bolttech/success/";
     private final String FAILED = System.getProperty("sys.default.path.config") + "/temp/Bolttech/failed/";
-    private final String REMOTE = "/uat/sales/unprocessed/";
     
     GRider _instance;
     
@@ -38,8 +36,9 @@ public class Bolttech {
     }
     
     public JSONObject NewTransaction(){
-        String lsSQL;
         JSONObject loJSON = new JSONObject();
+        
+        String lsSQL;
         
         //get transactions that is not yet extracted
         lsSQL = getSQ_Master();
@@ -98,7 +97,7 @@ public class Bolttech {
         ResultSet loRS = _instance.executeQuery(lsSQL);
         
         if (MiscUtil.RecordCount(loRS) <= 0){
-            loJSON.put("result", "error");
+            loJSON.put("result", "success");
             loJSON.put("message", "No data to extract.");
             return loJSON;
         }
@@ -108,6 +107,7 @@ public class Bolttech {
         
         try (CSVWriter writer = new CSVWriter(new FileWriter(loFilename))) {
             int lnCtr = 0;
+            
             while(loRS.next()){
                 lsSQL = "INSERT INTO Bolttech SET" + 
                         "  sBatchNox = " + SQLUtil.toSQL(lsTransNox) +
@@ -157,8 +157,6 @@ public class Bolttech {
                     return loJSON;
                 }
             }
-            
-            System.out.println("CSV file created successfully.");
         } catch (IOException | SQLException | ParseException e) {
             loJSON = new JSONObject();
             loJSON.put("result", "error");
@@ -180,21 +178,23 @@ public class Bolttech {
             Session session = null;
             ChannelSftp channelSftp = null;
             
+            //connect to bolttech server
             JSch jsch = new JSch();
             jsch.addIdentity(System.getProperty("bolttech.pkey"));
             session = jsch.getSession(System.getProperty("bolttech.user"), 
                                             System.getProperty("bolttech.host"), 
                                             Integer.parseInt(System.getProperty("bolttech.port")));
-
+            
             Properties config = new Properties();
             config.put("StrictHostKeyChecking", "no");
             session.setConfig(config);
-
             session.connect();
-
+            
             channelSftp = (ChannelSftp) session.openChannel("sftp");
             channelSftp.connect();
+            //end - connect to bolttech server
             
+            //get the unsent transactions
             String lsSQL = "SELECT sBatchNox, cTranStat" +
                             " FROM Bolttech" +
                             " WHERE cTranStat IN ('0', '3')";
@@ -203,6 +203,7 @@ public class Bolttech {
             
             while (loRS.next()){
                 String lsSRC;
+                
                 if (loRS.getString("cTranStat").equals("0")){
                     lsSRC = UPLOAD;
                 } else{
@@ -210,21 +211,41 @@ public class Bolttech {
                 }
                 
                 try (FileInputStream fis = new FileInputStream(lsSRC + loRS.getString("sBatchNox") + ".csv")) {
-                    channelSftp.put(fis, REMOTE + loRS.getString("sBatchNox") + ".csv");
-                }
+                    channelSftp.put(fis, System.getProperty("bolttech.rdir") + loRS.getString("sBatchNox") + ".csv");
                 
-                lsSQL = "UPDATE Bolttech SET cTranStat = '1' WHERE sBatchNox = " + SQLUtil.toSQL(loRS.getString("sBatchNox"));
-                if (_instance.executeUpdate(lsSQL) <= 0) {
+                    //update the transaction status to sent
+                    lsSQL = "UPDATE Bolttech SET cTranStat = '1' WHERE sBatchNox = " + SQLUtil.toSQL(loRS.getString("sBatchNox"));
+                    if (_instance.executeUpdate(lsSQL) <= 0) {
+                        loJSON.put("result", "error");
+                        loJSON.put("message", _instance.getMessage() + "; " + _instance.getErrMsg());
+                        return loJSON;
+                    }
+                    
+                    //move the file to success folder
+                    Path sourcePath = Paths.get(lsSRC + loRS.getString("sBatchNox") + ".csv");
+                    Path destinationPath = Paths.get(SUCCESS + loRS.getString("sBatchNox") + ".csv");
+                    Files.move(sourcePath, destinationPath, StandardCopyOption.REPLACE_EXISTING);
+                } catch (SftpException ex) {
+                    //update the transaction status to failed
+                    lsSQL = "UPDATE Bolttech SET cTranStat = '3' WHERE sBatchNox = " + SQLUtil.toSQL(loRS.getString("sBatchNox"));
+                    if (_instance.executeUpdate(lsSQL) <= 0) {
+                        loJSON.put("result", "error");
+                        loJSON.put("message", _instance.getMessage() + "; " + _instance.getErrMsg());
+                        return loJSON;
+                    }
+                    
+                    //move the file to unsent folder
+                    Path sourcePath = Paths.get(lsSRC + loRS.getString("sBatchNox") + ".csv");
+                    Path destinationPath = Paths.get(FAILED + loRS.getString("sBatchNox") + ".csv");
+                    Files.move(sourcePath, destinationPath, StandardCopyOption.REPLACE_EXISTING);
+                    
+                    loJSON = new JSONObject();
                     loJSON.put("result", "error");
-                    loJSON.put("message", _instance.getMessage() + "; " + _instance.getErrMsg());
+                    loJSON.put("message", ex.getMessage());
                     return loJSON;
                 }
-
-                Path sourcePath = Paths.get(lsSRC + loRS.getString("sBatchNox") + ".csv");
-                Path destinationPath = Paths.get(SUCCESS + loRS.getString("sBatchNox") + ".csv");
-                Files.move(sourcePath, destinationPath, StandardCopyOption.REPLACE_EXISTING);
             }
-        } catch (JSchException | SftpException | IOException | SQLException e) {
+        } catch (JSchException | IOException | SQLException e) {
             loJSON = new JSONObject();
             loJSON.put("result", "error");
             loJSON.put("message", e.getMessage());
@@ -243,6 +264,7 @@ public class Bolttech {
         System.setProperty("bolttech.port", props.getProperty("bolttech.port"));
         System.setProperty("bolttech.host", props.getProperty("bolttech.host"));
         System.setProperty("bolttech.user", props.getProperty("bolttech.user"));
+        System.setProperty("bolttech.rdir", props.getProperty("bolttech.rdir"));
         System.setProperty("bolttech.pkey", System.getProperty("sys.default.path.config") + "/config/" + props.getProperty("bolttech.pkey"));
     }
     

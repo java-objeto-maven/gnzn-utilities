@@ -65,11 +65,18 @@ public class SendPaySlipApp {
                         String message;
                         message = "Good day! \n\n Attached is your payslip for the payroll period " + rsToSend.getString("dPeriodFr") + " - " + rsToSend.getString("dPeriodTo");
                         message += ".\n\n [http://gts1.guanzongroup.com.ph:2007/repl/misc/download_ps.php?period="+ toBase64(rsToSend.getString("sPayPerID")) + "&client=" + toBase64(rsToSend.getString("sEmployID")) + "]";
-                        sendNotification( 
+                        if (sendNotification( 
                             rsToSend.getString("sProdctID"), 
                             rsToSend.getString("sUserIDxx"), 
                             "PAYSLIP (" + rsToSend.getString("dPeriodFr") + " - " + rsToSend.getString("dPeriodTo") + ")", 
-                            message);
+                            message)){
+                            
+                            String lsSQL = "UPDATE Payroll_Summary_New" +
+                                            " SET cMailSent = '2'" +
+                                            " WHERE sPayPerID = " + SQLUtil.toSQL(rsToSend.getString("sPayPerID")) +
+                                                " AND sEmployID = " + SQLUtil.toSQL(rsToSend.getString("sEmployID"));
+                            instance.getConnection().createStatement().executeUpdate(lsSQL);
+                        }
                     }
                 }
             } catch (SQLException e) {
@@ -120,9 +127,10 @@ public class SendPaySlipApp {
                                 " LEFT JOIN Branch e ON i.sBranchCD = e.sBranchCD" +  
                                 " LEFT JOIN Branch_Others f ON i.sBranchCD = f.sBranchCD" +  
                             " WHERE a.cMailSent = '1'" + 
-                            " GROUP BY a.sEmployID" +                  
+                            " GROUP BY sPayPerID, sUserIDxx" +                  
                             " HAVING sUserIDxx <> ''" +
                             " ORDER BY e.sEmailAdd DESC";
+            //" AND a.sPayPerID IN ('A0012425', 'A0012426', 'M0012437', 'M0012438', 'A0012427', 'A0012428', 'M0012440', 'M0012441')" +
 
             rs = instance.getConnection().createStatement().executeQuery(lsSQL);
         } catch (SQLException ex) {
@@ -170,9 +178,10 @@ public class SendPaySlipApp {
         String response = WebClient.sendHTTP(sURL, param.toJSONString(), (HashMap<String, String>) headers);
         if(response == null){
             System.out.println("HTTP Error detected: " + System.getProperty("store.error.info"));
-            System.exit(1);
+            return false;
         }
         
+        System.out.println(response);
         return true;
     }
     

@@ -8,6 +8,7 @@ org\guanzon\gnzn\utilities\lib\hcm\MPSalesAcc.class
 org\guanzon\gnzn\utilities\lib\hcm\RaffleNotificationEnd.class
 org\guanzon\gnzn\utilities\CreatePEF.class
 org\guanzon\gnzn\utilities\test\testSendMail$1.class
+org\guanzon\gnzn\utilities\auditing\ExportSPTransfer.class
 org\guanzon\gnzn\utilities\SendPaySlipApp.class
 org\guanzon\gnzn\utilities\lib\cp\Bolttech.class
 org\guanzon\gnzn\utilities\lib\hcm\LRPaymentPR.class

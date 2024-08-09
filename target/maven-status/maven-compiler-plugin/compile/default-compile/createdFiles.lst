@@ -28,4 +28,5 @@ org\guanzon\gnzn\utilities\lib\hcm\LRPayment.class
 org\guanzon\gnzn\utilities\SendBolttech.class
 org\guanzon\gnzn\utilities\lib\hcm\PanaloRaffle.class
 org\guanzon\gnzn\utilities\test\testSendMail.class
+org\guanzon\gnzn\utilities\auditing\ExportSPPOReturn.class
 org\guanzon\gnzn\utilities\SendPaySlip.class

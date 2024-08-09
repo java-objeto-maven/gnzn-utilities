@@ -11,9 +11,9 @@ import org.guanzon.appdriver.base.LogWrapper;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
 
-public class ExportSPTransfer {
+public class ExportSPPOReturn {
     public static void main(String[] args) {
-        LogWrapper logwrapr = new LogWrapper("ExportSPTransfer", "gnzn-utilities.log");
+        LogWrapper logwrapr = new LogWrapper("ExportSPPOReturn", "gnzn-utilities.log");
         logwrapr.info("Start of Process!");
         
         String path;
@@ -44,13 +44,12 @@ public class ExportSPTransfer {
                 System.exit(1);
             }
                         
-            String lsSQL = "SELECT a.*, b.sBranchNm" +
-                            " FROM SP_Transfer_Master a" +
-                                " LEFT JOIN Branch b ON a.sDestinat = b.sBranchCd" +
-                            " WHERE a.sTransNox LIKE 'M095%'" +
-                                " AND a.dTransact >= '2023-01-01'" +
-                                " AND a.cTranStat <> '2'" +
-                            " ORDER BY a.sTransNox";
+            String lsSQL = "SELECT *" +
+                            " FROM SP_PO_Return_Master" +
+                            " WHERE sTransNox LIKE 'M095%'" +
+                                " AND dTransact >= '2023-01-01'" +
+                                " AND cTranStat <> '2'" +
+                            " ORDER BY sTransNox";
             
             ResultSet loRS = instance.executeQuery(lsSQL);
             
@@ -59,12 +58,10 @@ public class ExportSPTransfer {
                 System.exit(0);
             }
             
-            try (FileWriter writer = new FileWriter(System.getProperty("sys.default.path.temp") + "/SPTransfer - " + SQLUtil.dateFormat(instance.getServerDate(), SQLUtil.FORMAT_TIMESTAMPX)  + ".csv", true)){
+            try (FileWriter writer = new FileWriter(System.getProperty("sys.default.path.temp") + "/SPPOReturn - " + SQLUtil.dateFormat(instance.getServerDate(), SQLUtil.FORMAT_TIMESTAMPX)  + ".csv", true)){
                 writer.append("Transaction No.");
                 writer.append(',');
                 writer.append("Date");
-                writer.append(',');
-                writer.append("Destination");
                 writer.append(',');
                 writer.append("Remarks");
                 writer.append(',');
@@ -96,8 +93,6 @@ public class ExportSPTransfer {
                     writer.append(',');
                     writer.append(loRS.getString("dTransact"));
                     writer.append(',');
-                    writer.append(loRS.getString("sBranchNm"));
-                    writer.append(',');
                     writer.append(loRS.getString("sRemarksx"));
                     writer.append(',');
                     writer.append(String.valueOf(loRS.getDouble("nTranTotl")));
@@ -108,7 +103,7 @@ public class ExportSPTransfer {
                     lsSQL = "SELECT * FROM xxxReplicationLog" +
                             " WHERE sTransNox LIKE " + SQLUtil.toSQL(loRS.getString("sTransNox").substring(0, 6) + "%") +
                                 " AND sStatemnt LIKE 'INSERT INTO%" + loRS.getString("sTransNox") + "%'" +
-                                " AND sTableNme = 'SP_Transfer_Master'";
+                                " AND sTableNme = 'SP_PO_Return_Master'";
 
                     ResultSet loRx = instance.executeQuery(lsSQL);
 
@@ -133,7 +128,7 @@ public class ExportSPTransfer {
                     lsSQL = "SELECT * FROM xxxReplicationLog" +
                             " WHERE sTransNox LIKE " + SQLUtil.toSQL(loRS.getString("sTransNox").substring(0, 6) + "%") +
                                 " AND sStatemnt LIKE 'UPDATE%SET cTranStat = 1%" + loRS.getString("sTransNox") + "%'" +
-                                " AND sTableNme = 'SP_Transfer_Master'";
+                                " AND sTableNme = 'SP_PO_Return_Master'";
 
                     loRx = instance.executeQuery(lsSQL);
 
@@ -157,7 +152,7 @@ public class ExportSPTransfer {
                     lsSQL = "SELECT * FROM xxxReplicationLog" +
                             " WHERE sTransNox LIKE " + SQLUtil.toSQL(loRS.getString("sTransNox").substring(0, 6) + "%") +
                                 " AND sStatemnt LIKE 'UPDATE%SET cTranStat = 3%" + loRS.getString("sTransNox") + "%'" +
-                                " AND sTableNme = 'SP_Transfer_Master'";
+                                " AND sTableNme = 'SP_PO_Return_Master'";
 
                     loRx = instance.executeQuery(lsSQL);
 

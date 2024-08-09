@@ -48,7 +48,7 @@ public class ExportSPTransfer {
                             " FROM SP_Transfer_Master a" +
                                 " LEFT JOIN Branch b ON a.sDestinat = b.sBranchCd" +
                             " WHERE a.sTransNox LIKE 'M095%'" +
-                                " AND a.dTransact >= '2023-01-01'" +
+                                " AND a.dTransact >= '2021-01-01'" +
                                 " AND a.cTranStat <> '2'" +
                             " ORDER BY a.sTransNox";
             

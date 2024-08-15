@@ -2,12 +2,14 @@ package org.guanzon.gnzn.utilities.lib.hcm;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
+import org.guanzon.appdriver.base.CommonUtils;
 import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
@@ -22,6 +24,8 @@ public class Employees implements ILoveMyJobValidator{
     private GRider _instance;
     private boolean _wparent;
     private String _message;
+    
+    private DayOfWeek _day;
     
     @Override
     public void setGRider(GRider foValue) {
@@ -56,9 +60,35 @@ public class Employees implements ILoveMyJobValidator{
                 ResultSet loRX = _instance.executeQuery(lsSQL);
                 
                 if (!loRX.next()){
-                    //is the employee has no IOC
-                    if (!hasIOC(loRS.getString("sEmployID"))){
-                        //create raffle entry
+                    if (_day == DayOfWeek.MONDAY){
+                        //is the employee has no IOC
+                        if (!hasIOC(loRS.getString("sEmployID"))){
+                            //create raffle entry
+                            _instance.beginTrans();
+                            lsSQL = "INSERT INTO RaffleEntries SET" +
+                                    "  sRaffleID = " + SQLUtil.toSQL(MiscUtil.getNextCode("RaffleEntries", "sRaffleID", true, _instance.getConnection(), fsBranchCd)) +
+                                    ", dTransact = " + SQLUtil.toSQL(fsDateFrom) +
+                                    ", sBranchCd = " + SQLUtil.toSQL(loRS.getString("sBranchCd")) +
+                                    ", sRaffleNo = " + SQLUtil.toSQL(StringHelper.prepad(String.valueOf(getNextRaffle(fsBranchCd, fsDateFrom)), 6, '0'))  +
+                                    ", sAcctNmbr = " + SQLUtil.toSQL(loRS.getString("sUserIDxx")) +
+                                    ", sClientID = " + SQLUtil.toSQL(loRS.getString("sEmployID")) +
+                                    ", sMobileNo = " + SQLUtil.toSQL(loRS.getString("sMobileNo")) +
+                                    ", sReferNox = NULL" + 
+                                    ", sSourceCd = " + SQLUtil.toSQL(SOURCE_CODE) +
+                                    ", cRaffledx = '0'" +
+                                    ", cMsgSentx = '0'" + 
+                                    ", sModified = " + SQLUtil.toSQL(_instance.getUserID()) +
+                                    ", dModified = " + SQLUtil.toSQL(_instance.getServerDate());
+
+                            System.err.println(lsSQL);
+                            if (_instance.executeUpdate(lsSQL) <= 0){
+                                _instance.rollbackTrans();
+                                _message = "Unable to create raffle entry.";
+                                return false;
+                            }
+                            _instance.commitTrans();
+                        }
+                    } else {
                         _instance.beginTrans();
                         lsSQL = "INSERT INTO RaffleEntries SET" +
                                 "  sRaffleID = " + SQLUtil.toSQL(MiscUtil.getNextCode("RaffleEntries", "sRaffleID", true, _instance.getConnection(), fsBranchCd)) +
@@ -83,6 +113,7 @@ public class Employees implements ILoveMyJobValidator{
                         }
                         _instance.commitTrans();
                     }
+                    
                 }
             }
             
@@ -103,15 +134,30 @@ public class Employees implements ILoveMyJobValidator{
             }
             
             if (!rcpts.isEmpty()){
-                if (SendRegularSystemNotification(rcpts, 
-                                            "I Love My Job Mondays",
-                                            "Congratualations! You are entitled for 1 ticket on todays raffle draw.")){
-                    lsSQL = "UPDATE RaffleEntries SET" +
-                                "  cMsgSentx = '1'" +
-                            " WHERE dTransact = " + SQLUtil.toSQL(fsDateFrom) +
-                                " AND sSourceCd = " + SQLUtil.toSQL(SOURCE_CODE) +
-                                " AND cMsgSentx = '0'";
-                    _instance.executeUpdate(lsSQL);
+                if (_day == DayOfWeek.MONDAY){
+                    if (SendRegularSystemNotification(rcpts, 
+                                                "I Love My Job Mondays",
+                                                "Congratualations! You are entitled for 1 ticket on todays raffle draw.")){
+
+                        lsSQL = "UPDATE RaffleEntries SET" +
+                                    "  cMsgSentx = '1'" +
+                                " WHERE dTransact = " + SQLUtil.toSQL(fsDateFrom) +
+                                    " AND sSourceCd = " + SQLUtil.toSQL(SOURCE_CODE) +
+                                    " AND cMsgSentx = '0'";
+                        _instance.executeUpdate(lsSQL);
+                    }
+                } else {
+                    if (SendRegularSystemNotification(rcpts, 
+                                                "I Love My Job Thursdays",
+                                                "Congratualations! You are entitled for 1 ticket on todays raffle draw.")){
+
+                        lsSQL = "UPDATE RaffleEntries SET" +
+                                    "  cMsgSentx = '1'" +
+                                " WHERE dTransact = " + SQLUtil.toSQL(fsDateFrom) +
+                                    " AND sSourceCd = " + SQLUtil.toSQL(SOURCE_CODE) +
+                                    " AND cMsgSentx = '0'";
+                        _instance.executeUpdate(lsSQL);
+                    }
                 }
             }
         } catch (SQLException e) {
@@ -180,7 +226,7 @@ public class Employees implements ILoveMyJobValidator{
                     new HashMap<String, String>();
             headers.put("Accept", "application/json");
             headers.put("Content-Type", "application/json");
-            headers.put("g-api-id", "IntegSys");
+            headers.put("g-api-id", "gRider");
             headers.put("g-api-imei", "356060072281722");
             headers.put("g-api-key", SQLUtil.dateFormat(calendar.getTime(), "yyyyMMddHHmmss"));
             headers.put("g-api-hash", org.apache.commons.codec.digest.DigestUtils.md5Hex((String)headers.get("g-api-imei") + (String)headers.get("g-api-key")));
@@ -236,59 +282,82 @@ public class Employees implements ILoveMyJobValidator{
     }
     
     private String getSQ_Master(String dTranDate){
-        return "SELECT" +
-                    "  a.sUserIDxx" +
-                    ", c.sCompnyNm" +
-                    ", d.sDeptName" +
-                    ", e.sPositnNm" +
-                    ", a.sEmailAdd" +
-                    ", c.sMobileNo" +
-                    ", b.sEmployID" +
-                    ", b.sBranchCd" +
-                " FROM App_User_Master a" +
-                    ", Employee_Master001 b" + 
-                    " LEFT JOIN Client_Master c" + 
-                        " ON b.sEmployID = c.sClientID" + 
-                    " LEFT JOIN Department d" + 
-                        " ON b.sDeptIDxx = d.sDeptIDxx" + 
-                    " LEFT JOIN `Position` e" + 
-                        " ON b.sPositnID = e.sPositnID" +
-                " WHERE a.sEmployNo = b.sEmployID" + 
-                    " AND a.sProdctID = 'gRider'" + 
-                    " AND a.cActivatd = '1'" + 
-                    " AND a.sEmployNo IS NOT NULL" + 
-                    " AND b.dFiredxxx IS NULL" + 
-                    " AND b.cRecdStat = '1'" +
-                " GROUP BY a.sEmployNo";
-//        return "SELECT" +
-//                "  a.sUserIDxx" +
-//                ", c.sCompnyNm" +
-//                ", d.sDeptName" +
-//                ", e.sPositnNm" +
-//                ", a.sEmailAdd" +
-//                ", f.dLogInxxx" +
-//                ", c.sMobileNo" +
-//                ", b.sEmployID" +
-//                ", f.sLogNoxxx" +
-//                ", b.sBranchCd" +
-//              " FROM App_User_Master a" +
-//                ", Employee_Master001 b" + 
-//                " LEFT JOIN Client_Master c" + 
-//                  " ON b.sEmployID = c.sClientID" + 
-//                " LEFT JOIN Department d" + 
-//                  " ON b.sDeptIDxx = d.sDeptIDxx" + 
-//                " LEFT JOIN `Position` e" + 
-//                  " ON b.sPositnID = e.sPositnID" +
-//                ", (SELECT * FROM xxxSysUserLog" + 
-//                      " WHERE sProdctID = 'gRider'" + 
-//                      " AND dLogInxxx LIKE " + SQLUtil.toSQL(dTranDate + "%")+ ") f" + 
-//              " WHERE a.sEmployNo = b.sEmployID" + 
-//                " AND a.sUserIDxx = f.sUserIDxx" + 
-//                " AND a.sProdctID = 'gRider'" + 
-//                " AND a.cActivatd = '1'" + 
-//                " AND a.sEmployNo is NOT NULL" + 
-//                " AND b.dFiredxxx IS NULL" + 
-//                " AND b.cRecdStat = '1'" + 
-//              " GROUP BY a.sUserIDxx";
+        LocalDate date = LocalDate.parse(dTranDate, DateTimeFormatter.ISO_LOCAL_DATE);
+        _day = date.getDayOfWeek();
+        
+        switch (_day){
+            case MONDAY:
+                return "SELECT" +
+                            "  a.sUserIDxx" +
+                            ", c.sCompnyNm" +
+                            ", d.sDeptName" +
+                            ", e.sPositnNm" +
+                            ", a.sEmailAdd" +
+                            ", f.dLogInxxx" +
+                            ", c.sMobileNo" +
+                            ", b.sEmployID" +
+                            ", f.sLogNoxxx" +
+                            ", b.sBranchCd" +
+                        " FROM App_User_Master a" +
+                            ", Employee_Master001 b" + 
+                                " LEFT JOIN Client_Master c" + 
+                                    " ON b.sEmployID = c.sClientID" + 
+                                " LEFT JOIN Department d" + 
+                                    " ON b.sDeptIDxx = d.sDeptIDxx" + 
+                                " LEFT JOIN `Position` e" + 
+                                    " ON b.sPositnID = e.sPositnID" +
+                                ", (SELECT * FROM xxxSysUserLog" + 
+                                    " WHERE sProdctID = 'gRider'" + 
+                                    " AND dLogInxxx BETWEEN " + 
+                                        SQLUtil.toSQL(SQLUtil.dateFormat(CommonUtils.dateAdd(SQLUtil.toDate(dTranDate, SQLUtil.FORMAT_SHORT_DATE), -7), SQLUtil.FORMAT_SHORT_DATE) + " 00:00:01") + 
+                                            " AND " + SQLUtil.toSQL(dTranDate + " 23:59:00") + ") f" + 
+                        " WHERE a.sEmployNo = b.sEmployID" + 
+                            " AND a.sUserIDxx = f.sUserIDxx" + 
+                            " AND a.sProdctID = 'gRider'" + 
+                            " AND a.cActivatd = '1'" + 
+                            " AND a.sEmployNo is NOT NULL" + 
+                            " AND b.dFiredxxx IS NULL" + 
+                            " AND b.cRecdStat = '1'" + 
+                        " GROUP BY a.sUserIDxx";
+            case THURSDAY:
+                return "SELECT" +
+                            "  a.sUserIDxx" +
+                            ", c.sCompnyNm" +
+                            ", d.sDeptName" +
+                            ", e.sPositnNm" +
+                            ", a.sEmailAdd" +
+                            ", f.dLogInxxx" +
+                            ", c.sMobileNo" +
+                            ", b.sEmployID" +
+                            ", f.sLogNoxxx" +
+                            ", b.sBranchCd" +
+                        " FROM App_User_Master a" +
+                            ", Employee_Master001 b" + 
+                                " LEFT JOIN Client_Master c" + 
+                                    " ON b.sEmployID = c.sClientID" + 
+                                " LEFT JOIN Department d" + 
+                                    " ON b.sDeptIDxx = d.sDeptIDxx" + 
+                                " LEFT JOIN `Position` e" + 
+                                    " ON b.sPositnID = e.sPositnID" +
+                                ", (SELECT * FROM xxxSysUserLog" + 
+                                    " WHERE sProdctID = 'gRider'" + 
+                                    " AND dLogInxxx BETWEEN " + 
+                                        SQLUtil.toSQL(SQLUtil.dateFormat(CommonUtils.dateAdd(SQLUtil.toDate(dTranDate, SQLUtil.FORMAT_SHORT_DATE), -3), SQLUtil.FORMAT_SHORT_DATE) + " 00:00:01") + 
+                                            " AND " + SQLUtil.toSQL(dTranDate + " 23:59:00") + ") f" + 
+                        " WHERE a.sEmployNo = b.sEmployID" + 
+                            " AND a.sUserIDxx = f.sUserIDxx" + 
+                            " AND a.sProdctID = 'gRider'" + 
+                            " AND a.cActivatd = '1'" + 
+                            " AND b.sBranchCd IN ('GK01', 'M001')" +
+                            " AND b.sDeptIDxx <> '015'" +
+                            " AND a.sEmployNo is NOT NULL" + 
+                            " AND b.dFiredxxx IS NULL" + 
+                            " AND b.cRecdStat = '1'" + 
+                        " GROUP BY a.sUserIDxx";
+            default:
+                return "SELECT 0 = 1;";
+        }
+        
+        
     }
 }

@@ -129,7 +129,7 @@ public class SendPaySlipApp {
                             " WHERE a.cMailSent = '1'" + 
                             " GROUP BY sPayPerID, sUserIDxx" +                  
                             " HAVING sUserIDxx <> ''" +
-                            " ORDER BY e.sEmailAdd DESC";
+                            " ORDER BY a.sPayPerID ASC, e.sEmailAdd DESC";
             //" AND a.sPayPerID IN ('A0012425', 'A0012426', 'M0012437', 'M0012438', 'A0012427', 'A0012428', 'M0012440', 'M0012441')" +
 
             rs = instance.getConnection().createStatement().executeQuery(lsSQL);

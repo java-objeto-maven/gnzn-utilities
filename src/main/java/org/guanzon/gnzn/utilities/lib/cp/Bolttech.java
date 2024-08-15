@@ -58,7 +58,11 @@ public class Bolttech {
                     loJSONDet = new JSONObject();
                     
                     for (int lnCtr = 1; lnCtr <= loDetail.getMetaData().getColumnCount(); lnCtr++){
-                        loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), loDetail.getObject(lnCtr));
+                        if (loDetail.getMetaData().getColumnLabel(lnCtr).equals("PRODUCT_NAME")){
+                            loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), loRS.getString("sCategrNm"));
+                        } else {
+                            loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), loDetail.getObject(lnCtr));
+                        }
                     }
                     
                     lsSQL = "INSERT INTO CP_SO_Insurance SET" +
@@ -103,16 +107,50 @@ public class Bolttech {
         }
         
         String lsTransNox = MiscUtil.getNextCode("Bolttech", "sBatchNox", true, _instance.getConnection(), _instance.getBranchCode());
-        String loFilename = UPLOAD + lsTransNox + ".csv";
+        String lsFilename = "GUAPHTCV_PH_" + SQLUtil.dateFormat(_instance.getServerDate(), SQLUtil.FORMAT_SHORT_DATEX) + ".csv";
         
-        try (CSVWriter writer = new CSVWriter(new FileWriter(loFilename))) {
+        try (CSVWriter writer = new CSVWriter(new FileWriter(UPLOAD + lsFilename))) {
             int lnCtr = 0;
+            
+            String [] header = new String[30];
+            header[0] = "CLIENT_TRANS_NO";
+            header[1] = "CONTRACT_SOLD_DATE";
+            header[2] = "PRODUCT_NAME";
+            header[3] = "CUST_NAME";
+            header[4] = "CUST_ID";
+            header[5] = "CUST_MOBILE_NO";
+            header[6] = "CUST_EMAIL";
+            header[7] = "CUST_ADDRESS";
+            header[8] = "CUST_CITY";
+            header[9] = "STORE_CODE";
+            header[10] = "STORE_NAME";
+            header[11] = "STORE_ADDRESS";
+            header[12] = "STORE_CITY";
+            header[13] = "SALES_REP_ID";
+            header[14] = "SALES_REP_NAME";
+            header[15] = "DEVICE_RRP";
+            header[16] = "DEVICE_TYPE";
+            header[17] = "DEVICE_MAKE";
+            header[18] = "DEVICE_MODEL";
+            header[19] = "COLOR";
+            header[20] = "IMEI";
+            header[21] = "NAME_GOODS_TYPE";
+            header[22] = "DTIME_START";
+            header[23] = "DTIME_END";
+            header[24] = "DEVICE_VALUE_SUM_COVERED";
+            header[25] = "CREATION_DATE";
+            header[26] = "SERIALNO";
+            header[27] = "PARTNER_ID";
+            header[28] = "VALUE_ADDED_SERVICES";
+            header[29] = "DWH_UNIQUE_KEY";
+            writer.writeNext(header);
             
             while(loRS.next()){
                 lsSQL = "INSERT INTO Bolttech SET" + 
                         "  sBatchNox = " + SQLUtil.toSQL(lsTransNox) +
-                        ", dCreatedx = " + SQLUtil.toSQL(SQLUtil.dateFormat(_instance.getServerDate(), SQLUtil.FORMAT_TIMESTAMP)) +
-                        ", cTranStat = '0'";
+                        ", sFileName = " + SQLUtil.toSQL(lsFilename) +
+                        ", cTranStat = '0'" +
+                        ", dCreatedx = " + SQLUtil.toSQL(SQLUtil.dateFormat(_instance.getServerDate(), SQLUtil.FORMAT_TIMESTAMP));
                 
                 if (_instance.executeUpdate(lsSQL) <= 0) {
                     loJSON.put("result", "error");
@@ -122,27 +160,11 @@ public class Bolttech {
                 
                 loJSON = (JSONObject) loParser.parse(loRS.getString("sPayloadx"));
                 
-                Iterator<?> keys = loJSON.keySet().iterator();
-                
-                if (lnCtr == 0){
-                    // Write header
-                    String [] header = new String[loJSON.size()];
-                    
-                    int i = 0;
-                    while (keys.hasNext()) {
-                        header[i++] = (String) keys.next();
-                    }
-                    
-                    writer.writeNext(header);
-                    lnCtr++;
-                }
-                
                 // Write details
-                String [] row = new String[loJSON.size()];
+                String [] row = new String[header.length];
                 
-                int i = 0;
-                for (Object key : loJSON.keySet()) {
-                    row[i++] = loJSON.get(key).toString();
+                for (int i = 0; i <= header.length-1; i++){
+                    row[i] = loJSON.get(header[i]).toString();
                 }
                 writer.writeNext(row);
                 
@@ -195,7 +217,7 @@ public class Bolttech {
             //end - connect to bolttech server
             
             //get the unsent transactions
-            String lsSQL = "SELECT sBatchNox, cTranStat" +
+            String lsSQL = "SELECT sBatchNox, sFileName, cTranStat" +
                             " FROM Bolttech" +
                             " WHERE cTranStat IN ('0', '3')";
             
@@ -210,20 +232,26 @@ public class Bolttech {
                     lsSRC = FAILED;
                 }
                 
-                try (FileInputStream fis = new FileInputStream(lsSRC + loRS.getString("sBatchNox") + ".csv")) {
-                    channelSftp.put(fis, System.getProperty("bolttech.rdir") + loRS.getString("sBatchNox") + ".csv");
+                try (FileInputStream fis = new FileInputStream(lsSRC + loRS.getString("sFileName"))) {
+                    System.out.println(System.getProperty("bolttech.rdir") + loRS.getString("sFileName"));
+                    channelSftp.put(fis, System.getProperty("bolttech.rdir") + loRS.getString("sFileName"));
                 
                     //update the transaction status to sent
-                    lsSQL = "UPDATE Bolttech SET cTranStat = '1' WHERE sBatchNox = " + SQLUtil.toSQL(loRS.getString("sBatchNox"));
+                    lsSQL = "UPDATE Bolttech SET" +
+                                "  cTranStat = '1' " +
+                                ", dDateSent = " + SQLUtil.toSQL(_instance.getServerDate()) +
+                            " WHERE sBatchNox = " + SQLUtil.toSQL(loRS.getString("sBatchNox"));
                     if (_instance.executeUpdate(lsSQL) <= 0) {
                         loJSON.put("result", "error");
                         loJSON.put("message", _instance.getMessage() + "; " + _instance.getErrMsg());
                         return loJSON;
                     }
                     
+                    fis.close();
+                    
                     //move the file to success folder
-                    Path sourcePath = Paths.get(lsSRC + loRS.getString("sBatchNox") + ".csv");
-                    Path destinationPath = Paths.get(SUCCESS + loRS.getString("sBatchNox") + ".csv");
+                    Path sourcePath = Paths.get(lsSRC + loRS.getString("sFileName"));
+                    Path destinationPath = Paths.get(SUCCESS + loRS.getString("sBatchNox"));
                     Files.move(sourcePath, destinationPath, StandardCopyOption.REPLACE_EXISTING);
                 } catch (SftpException ex) {
                     //update the transaction status to failed
@@ -235,8 +263,8 @@ public class Bolttech {
                     }
                     
                     //move the file to unsent folder
-                    Path sourcePath = Paths.get(lsSRC + loRS.getString("sBatchNox") + ".csv");
-                    Path destinationPath = Paths.get(FAILED + loRS.getString("sBatchNox") + ".csv");
+                    Path sourcePath = Paths.get(lsSRC + loRS.getString("sFileName"));
+                    Path destinationPath = Paths.get(FAILED + loRS.getString("sBatchNox"));
                     Files.move(sourcePath, destinationPath, StandardCopyOption.REPLACE_EXISTING);
                     
                     loJSON = new JSONObject();
@@ -273,12 +301,14 @@ public class Bolttech {
                     "  a.sTransNox" +
                     ", b.sStockIDx" +
                     ", c.sCategID1" +
+                    ", f.sCategrNm" +
                     ", e.sTransNox xTransNox" +
                 " FROM CP_SO_Master a" +
                     " LEFT JOIN CP_SO_Insurance e ON a.sTransNox = e.sSourceNo" +
                     ", CP_SO_Detail b" +
                         " LEFT JOIN CP_Inventory c ON b.sStockIDx = c.sStockIDx" +
                         " LEFT JOIN Category d ON c.sCategID1 = d.sCategrID" +
+                        " LEFT JOIN Category f ON c.sCategID2 = f.sCategrID" +
                 " WHERE a.sTransNox = b.sTransNox" +
                     " AND a.cTranStat IN ('3', '7')" +
                     " AND a.dTransact >= '2024-06-27'" +

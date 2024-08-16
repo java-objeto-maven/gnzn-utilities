@@ -15,8 +15,9 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Iterator;
+import java.util.Calendar;
 import java.util.Properties;
+import org.guanzon.appdriver.base.CommonUtils;
 import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
@@ -58,11 +59,59 @@ public class Bolttech {
                     loJSONDet = new JSONObject();
                     
                     for (int lnCtr = 1; lnCtr <= loDetail.getMetaData().getColumnCount(); lnCtr++){
-                        if (loDetail.getMetaData().getColumnLabel(lnCtr).equals("PRODUCT_NAME")){
-                            loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), loRS.getString("sCategrNm"));
-                        } else {
-                            loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), loDetail.getObject(lnCtr));
-                        }
+                        switch (loDetail.getMetaData().getColumnLabel(lnCtr)){
+                        case "IMEI":
+                            if (loDetail.getString("BRAND_ID").equals("C001058")){ //iphone
+                                loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), "");
+                            } else {
+                                loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), loDetail.getObject(lnCtr));
+                            }
+                            break;
+                        case "SERIALNO":
+                            if (loDetail.getString("BRAND_ID").equals("C001058")){ //iphone
+                                loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), loDetail.getObject(lnCtr));
+                            } else {
+                                loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), "");
+                            }
+                            break;
+                        case "DTIME_START":
+                            lsSQL = loDetail.getString("CONTRACT_SOLD_DATE"); //DD/MM/YYYY
+                            //ADLD - start date is same with purchase date
+                            
+                            if (loRS.getString("sCategID2").equals("C001054")){
+                                //EW - start date is 12 months after the purchase date
+                                //      we are assumming that the standard warranty period is always 12 months for new units
+                                lsSQL = SQLUtil.dateFormat(CommonUtils.dateAdd(SQLUtil.toDate(lsSQL, "dd/MM/yyyy"), Calendar.MONTH, 12), "dd/MM/yyyy");
+                            }
+                            
+                            loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), lsSQL);                            
+                            break;
+                        case "DTIME_END":
+                            lsSQL = (String) loJSONDet.get("DTIME_START");
+                            lsSQL = SQLUtil.dateFormat(CommonUtils.dateAdd(SQLUtil.toDate(lsSQL, "dd/MM/yyyy"), Calendar.MONTH, 12), "dd/MM/yyyy");
+                            
+                            loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), lsSQL);   
+                            break;
+                        case "NAME_GOODS_TYPE":
+                        case "DEVICE_TYPE":
+                            if (loDetail.getString("CATEG_ID4").equals("C001055") ||
+                                loDetail.getString("CATEG_ID4").equals("C0A9008")){
+                                loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), "TABLET");  
+                            } else {
+                                loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), "SMARTPHONE");  
+                            }
+                            break;
+                        case "BRAND_ID":
+                        case "CATEG_ID":
+                        case "CATEG_ID4":
+                            break;
+                        default:
+                            if (loDetail.getMetaData().getColumnLabel(lnCtr).equals("PRODUCT_NAME")){
+                                loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), loRS.getString("sCategrNm"));
+                            } else {
+                                loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), loDetail.getObject(lnCtr));
+                            }
+                        }                    
                     }
                     
                     lsSQL = "INSERT INTO CP_SO_Insurance SET" +
@@ -110,7 +159,17 @@ public class Bolttech {
         String lsFilename = "GUAPHTCV_PH_" + SQLUtil.dateFormat(_instance.getServerDate(), SQLUtil.FORMAT_SHORT_DATEX) + ".csv";
         
         try (CSVWriter writer = new CSVWriter(new FileWriter(UPLOAD + lsFilename))) {
-            int lnCtr = 0;
+            lsSQL = "INSERT INTO Bolttech SET" + 
+                        "  sBatchNox = " + SQLUtil.toSQL(lsTransNox) +
+                        ", sFileName = " + SQLUtil.toSQL(lsFilename) +
+                        ", cTranStat = '0'" +
+                        ", dCreatedx = " + SQLUtil.toSQL(SQLUtil.dateFormat(_instance.getServerDate(), SQLUtil.FORMAT_TIMESTAMP));
+                
+            if (_instance.executeUpdate(lsSQL) <= 0) {
+                loJSON.put("result", "error");
+                loJSON.put("message", _instance.getMessage() + "; " + _instance.getErrMsg());
+                return loJSON;
+            }
             
             String [] header = new String[30];
             header[0] = "CLIENT_TRANS_NO";
@@ -146,25 +205,13 @@ public class Bolttech {
             writer.writeNext(header);
             
             while(loRS.next()){
-                lsSQL = "INSERT INTO Bolttech SET" + 
-                        "  sBatchNox = " + SQLUtil.toSQL(lsTransNox) +
-                        ", sFileName = " + SQLUtil.toSQL(lsFilename) +
-                        ", cTranStat = '0'" +
-                        ", dCreatedx = " + SQLUtil.toSQL(SQLUtil.dateFormat(_instance.getServerDate(), SQLUtil.FORMAT_TIMESTAMP));
-                
-                if (_instance.executeUpdate(lsSQL) <= 0) {
-                    loJSON.put("result", "error");
-                    loJSON.put("message", _instance.getMessage() + "; " + _instance.getErrMsg());
-                    return loJSON;
-                }
-                
                 loJSON = (JSONObject) loParser.parse(loRS.getString("sPayloadx"));
                 
                 // Write details
                 String [] row = new String[header.length];
                 
                 for (int i = 0; i <= header.length-1; i++){
-                    row[i] = loJSON.get(header[i]).toString();
+                    row[i] = loJSON.get(header[i]).toString();                    
                 }
                 writer.writeNext(row);
                 
@@ -251,7 +298,7 @@ public class Bolttech {
                     
                     //move the file to success folder
                     Path sourcePath = Paths.get(lsSRC + loRS.getString("sFileName"));
-                    Path destinationPath = Paths.get(SUCCESS + loRS.getString("sBatchNox"));
+                    Path destinationPath = Paths.get(SUCCESS + loRS.getString("sFileName"));
                     Files.move(sourcePath, destinationPath, StandardCopyOption.REPLACE_EXISTING);
                 } catch (SftpException ex) {
                     //update the transaction status to failed
@@ -264,7 +311,7 @@ public class Bolttech {
                     
                     //move the file to unsent folder
                     Path sourcePath = Paths.get(lsSRC + loRS.getString("sFileName"));
-                    Path destinationPath = Paths.get(FAILED + loRS.getString("sBatchNox"));
+                    Path destinationPath = Paths.get(FAILED + loRS.getString("sFileName"));
                     Files.move(sourcePath, destinationPath, StandardCopyOption.REPLACE_EXISTING);
                     
                     loJSON = new JSONObject();
@@ -301,6 +348,7 @@ public class Bolttech {
                     "  a.sTransNox" +
                     ", b.sStockIDx" +
                     ", c.sCategID1" +
+                    ", c.sCategID2" +
                     ", f.sCategrNm" +
                     ", e.sTransNox xTransNox" +
                 " FROM CP_SO_Master a" +
@@ -323,7 +371,7 @@ public class Bolttech {
                     ", f.sCategrNm PRODUCT_NAME" + 
                     ", TRIM(CONCAT(g.sFrstName, ' ', g.sLastName )) CUST_NAME" + 
                     ", '' CUST_ID" + 
-                    ", g.sMobileNo CUST_MOBILE_NO" + 
+                    ", CONCAT('63', RIGHT(g.sMobileNo, 10)) CUST_MOBILE_NO" + 
                     ", g.sEmailAdd CUST_EMAIL" + 
                     ", TRIM(CONCAT(g.sAddressx, ' ', j.sTownName, ', ', h.sProvName)) CUST_ADDRESS" + 
                     ", '' CUST_CITY" + 
@@ -340,14 +388,17 @@ public class Bolttech {
                     ", n.sColorNme COLOR" + 
                     ", o.sSerialNo IMEI" + 
                     ", e.sCategrNm NAME_GOODS_TYPE" + 
-                    ", DATE_FORMAT(a.dTransact,'%d/%m/%Y') DTIME_START" + 
+                    ", '' DTIME_START" + 
                     ", '' DTIME_END" + 
                     ", c.nPurchase DEVICE_VALUE_SUM_COVERED" + 
                     ", '' CREATION_DATE" + 
                     ", o.sSerialNo SERIALNO" + 
                     ", 'PHGUANZRETNA01' PARTNER_ID" + 
-                    ", 'MBG' VALUE_ADDED_SERVICES" + 
+                    ", 'TY_MBK_GR' VALUE_ADDED_SERVICES" + 
                     ", '' DWH_UNIQUE_KEY" + 
+                    ", c.sBrandIDx BRAND_ID" +
+                    ", c.sCategID2 CATEG_ID" +
+                    ", c.sCategID4 CATEG_ID4" +
                 " FROM CP_SO_Master a" + 
                         " LEFT JOIN Client_Master g ON a.sClientID = g.sClientID" + 
                         " LEFT JOIN TownCity j ON g.sTownIDxx = j.sTownIDxx" + 

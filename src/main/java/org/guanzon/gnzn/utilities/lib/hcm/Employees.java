@@ -137,7 +137,7 @@ public class Employees implements ILoveMyJobValidator{
                 if (_day == DayOfWeek.MONDAY){
                     if (SendRegularSystemNotification(rcpts, 
                                                 "I Love My Job Mondays",
-                                                "Congratualations! You are entitled for 1 ticket on todays raffle draw.")){
+                                                "Congratulations! You are entitled for 1 ticket on todays raffle draw.")){
 
                         lsSQL = "UPDATE RaffleEntries SET" +
                                     "  cMsgSentx = '1'" +
@@ -149,7 +149,7 @@ public class Employees implements ILoveMyJobValidator{
                 } else {
                     if (SendRegularSystemNotification(rcpts, 
                                                 "I Love My Job Thursdays",
-                                                "Congratualations! You are entitled for 1 ticket on todays raffle draw.")){
+                                                "Congratulations! You are entitled for 1 ticket on todays raffle draw.")){
 
                         lsSQL = "UPDATE RaffleEntries SET" +
                                     "  cMsgSentx = '1'" +
@@ -318,7 +318,8 @@ public class Employees implements ILoveMyJobValidator{
                             " AND a.sEmployNo is NOT NULL" + 
                             " AND b.dFiredxxx IS NULL" + 
                             " AND b.cRecdStat = '1'" + 
-                        " GROUP BY a.sUserIDxx";
+                        " GROUP BY a.sUserIDxx" + 
+                        " ORDER BY f.dLogInxxx";
             case THURSDAY:
                 return "SELECT" +
                             "  a.sUserIDxx" +
@@ -353,7 +354,8 @@ public class Employees implements ILoveMyJobValidator{
                             " AND a.sEmployNo is NOT NULL" + 
                             " AND b.dFiredxxx IS NULL" + 
                             " AND b.cRecdStat = '1'" + 
-                        " GROUP BY a.sUserIDxx";
+                        " GROUP BY a.sUserIDxx" + 
+                        " ORDER BY f.dLogInxxx";
             default:
                 return "SELECT 0 = 1;";
         }

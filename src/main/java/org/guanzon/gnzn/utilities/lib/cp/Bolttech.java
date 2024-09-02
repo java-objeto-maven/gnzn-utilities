@@ -358,7 +358,7 @@ public class Bolttech {
                         " LEFT JOIN Category d ON c.sCategID1 = d.sCategrID" +
                         " LEFT JOIN Category f ON c.sCategID2 = f.sCategrID" +
                 " WHERE a.sTransNox = b.sTransNox" +
-                    " AND a.cTranStat IN ('3', '7')" +
+                    " AND a.cTranStat NOT IN ('3', '7')" +
                     " AND a.dTransact >= '2024-06-27'" +
                 " HAVING c.sCategID1 = 'C001052'" +
                     " AND xTransNox IS NULL";
@@ -417,7 +417,7 @@ public class Bolttech {
                 " WHERE a.sTransNox = b.sTransNox" + 
                     " AND b.sStockIDx = c.sStockIDx" + 
                     " AND LEFT(a.sTransNox,4) = d.sBranchCd" + 
-                    " AND a.cTranStat IN ('3', '7')" +
+                    " AND a.cTranStat NOT IN ('3', '7')" +
                 " HAVING PRODUCT_NAME = 'Units'";
     }
     

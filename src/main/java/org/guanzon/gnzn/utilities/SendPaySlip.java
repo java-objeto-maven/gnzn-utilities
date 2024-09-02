@@ -70,11 +70,9 @@ public class SendPaySlip {
             
             pomail = new SendMail(path, sender);
 
-            if(pomail.connect(false)){
+            if(pomail.connect(true)){
                 System.out.println("Successfully connected to mail server.");
-                try {
-                    FileWriter writer = new FileWriter(System.getProperty("sys.default.path.temp") + "/PaySlip - " + SQLUtil.dateFormat(instance.getServerDate(), SQLUtil.FORMAT_SHORT_DATE)  + ".csv");
-                    
+                try {                    
                     while(rsToSend.next()){
                         String lsEmail;
                         
@@ -131,26 +129,23 @@ public class SendPaySlip {
                                 pomail.sendMessage(msginfo);
                                 
                                 lsSQL = "UPDATE Payroll_Summary_New" +
-                                        " SET cMailSent = '2'" +
+                                        " SET cMailSent = 1 | 4" +
                                         " WHERE sPayPerID = " + SQLUtil.toSQL(rsToSend.getString("sPayPerID")) +
                                             " AND sEmployID = " + SQLUtil.toSQL(rsToSend.getString("sEmployID"));
                                 instance.getConnection().createStatement().executeUpdate(lsSQL);
-                                        
-                                writer.append(rsToSend.getString("sBranchCD"));
-                                writer.append(',');
-                                writer.append(rsToSend.getString("sDeptIDxx"));
-                                writer.append(',');
-                                writer.append(rsToSend.getString("sEmployNm"));
-                                writer.append(',');
-                                writer.append(lsEmail);
-                                writer.append('\n');
                             } catch (MessagingException e){
+                                lsSQL = "UPDATE Payroll_Summary_New" +
+                                        " SET cMailSent = '6'" +
+                                        " WHERE sPayPerID = " + SQLUtil.toSQL(rsToSend.getString("sPayPerID")) +
+                                            " AND sEmployID = " + SQLUtil.toSQL(rsToSend.getString("sEmployID"));
+                                instance.getConnection().createStatement().executeUpdate(lsSQL);
+                                
                                 logwrapr.severe("extract2send: MessagingException error detected.", e);
                                 System.exit(1);
                             }
                         } else {
                             lsSQL = "UPDATE Payroll_Summary_New" +
-                                        " SET cMailSent = '4'" +
+                                        " SET cMailSent = '6'" +
                                         " WHERE sPayPerID = " + SQLUtil.toSQL(rsToSend.getString("sPayPerID")) +
                                             " AND sEmployID = " + SQLUtil.toSQL(rsToSend.getString("sEmployID"));
                             instance.getConnection().createStatement().executeUpdate(lsSQL);
@@ -175,7 +170,7 @@ public class SendPaySlip {
     private static ResultSet extract2send(String sender){
         ResultSet rs = null;
         try {  
-            String lsSQL = "SELECT a.sBranchCD, a.sPayPerID, a.sEmployID, IFNULL(b.sEmailAdd, '') sEmailAdd, c.dPeriodFr, c.dPeriodTo, CONCAT(b.sLastName, ', ', b.sFrstname) sEmployNm, IFNULL(j.sUserIDxx, '') sUserIDxx, IFNULL(j.sProdctID, '') sProdctID" +
+            String lsSQL = "SELECT a.sBranchCD, a.sPayPerID, a.sEmployID, IFNULL(b.sEmailAdd, '') sEmailAdd, c.dPeriodFr, c.dPeriodTo, CONCAT(b.sLastName, ', ', b.sFrstname) sEmployNm" +
                                 ", IFNULL(e.sEmailAdd, '') sBranchMl" +
                                 ", IFNULL(d.sEmailAdd, '') sDeptMail" +
                                 ", IFNULL(i.sEmpLevID, '0') sEmpLevID" +
@@ -186,12 +181,12 @@ public class SendPaySlip {
                             " FROM Payroll_Summary_New a" +
                                 " LEFT JOIN Client_Master b ON a.sEmployID = b.sClientID" +
                                 " LEFT JOIN Payroll_Period c ON a.sPayPerID = c.sPayPerID" +
-                                " LEFT JOIN App_User_Master j ON  a.sEmployID = j.sEmployNo and j.cActivatd = '1' AND j.sProdctID = 'gRider'" +
                                 " LEFT JOIN Employee_Master001 i ON a.sEmployID = i.sEmployID" + 
                                 " LEFT JOIN Department d ON i.sDeptIDxx = d.sDeptIDxx" + 
                                 " LEFT JOIN Branch e ON i.sBranchCD = e.sBranchCD" + 
                                 " LEFT JOIN Branch_Others f ON i.sBranchCD = f.sBranchCD" + 
-                            " WHERE a.cMailSent = '1'" +                  
+                            " WHERE a.cMailSent = '1'" +       
+                                " AND a.sBranchCd NOT IN (SELECT sBranchCd FROM Branch WHERE IFNULL(sEmailAdd, '') = '')" +
                             " ORDER BY e.sEmailAdd DESC" + 
                             (sender.compareToIgnoreCase("ymail") == 0 ? " LIMIT 150" : " LIMIT 350");
 

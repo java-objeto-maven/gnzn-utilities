@@ -72,7 +72,7 @@ public class SendPaySlipApp {
                             message)){
                             
                             String lsSQL = "UPDATE Payroll_Summary_New" +
-                                            " SET cMailSent = '2'" +
+                                            " SET cMailSent = 1 | 2" +
                                             " WHERE sPayPerID = " + SQLUtil.toSQL(rsToSend.getString("sPayPerID")) +
                                                 " AND sEmployID = " + SQLUtil.toSQL(rsToSend.getString("sEmployID"));
                             instance.getConnection().createStatement().executeUpdate(lsSQL);
@@ -87,6 +87,8 @@ public class SendPaySlipApp {
             logwrapr.severe("extract2send: IOException error detected.", e);
             System.exit(1);
         }
+        
+        SendPaySlip.main(args);
         
         System.exit(0);
     }

@@ -135,7 +135,7 @@ public class SendPaySlip {
                                 instance.getConnection().createStatement().executeUpdate(lsSQL);
                             } catch (MessagingException e){
                                 lsSQL = "UPDATE Payroll_Summary_New" +
-                                        " SET cMailSent = '6'" +
+                                        " SET cMailSent = 1 | 6" +
                                         " WHERE sPayPerID = " + SQLUtil.toSQL(rsToSend.getString("sPayPerID")) +
                                             " AND sEmployID = " + SQLUtil.toSQL(rsToSend.getString("sEmployID"));
                                 instance.getConnection().createStatement().executeUpdate(lsSQL);

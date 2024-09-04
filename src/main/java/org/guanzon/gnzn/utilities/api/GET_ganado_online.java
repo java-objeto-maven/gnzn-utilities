@@ -73,11 +73,14 @@ public class GET_ganado_online {
                 }
             }
 
-            Map<String, String> headers = API.getWSHeader("TeleMktg");
+//            Map<String, String> headers = API.getWSHeader("TeleMktg");
+
+            JSONObject headers = new JSONObject();
+            headers.put("g-access-token", API.getAccessToken(System.getProperty("sys.default.path.config") + "/access.token"));
 
             String response;
             
-            response = WebClient.sendHTTP(API.GET_GANADO_ONLINE, json.toJSONString(), (HashMap<String, String>) headers);
+            response = WebClient.sendHTTP(API.GET_GANADO_ONLINEX, json.toJSONString(), (HashMap<String, String>) headers);
             if(response == null){
                 System.out.println("No Response");
                 System.exit(1);

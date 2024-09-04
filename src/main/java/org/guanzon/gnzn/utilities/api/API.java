@@ -1,15 +1,19 @@
 package org.guanzon.gnzn.utilities.api;
 
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
-import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
+import org.guanzon.gtoken.RequestAccess;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 public class API {
     public static String GET_GANADO_ONLINE = "http://localhost/gcircle/ganado/download_ganado.php";
-    
-    public static String POST_GANADO_ONLINE = "http://localhost/system/execute.php";
+    public static String GET_GANADO_ONLINEX = "http://localhost/x-api/v1.0/ganado/download_ganado.php";
     
     public static HashMap getWSHeader(String fsProdctID){
         String clientid = "GGC_BM001";
@@ -35,5 +39,29 @@ public class API {
         headers.put("g-api-token", "");    
         
         return (HashMap) headers;
+    }
+    
+    public static String getAccessToken(String access){
+        try {
+            JSONParser oParser = new JSONParser();
+            JSONObject token = (JSONObject)oParser.parse(new FileReader(access));
+
+            Calendar current_date = Calendar.getInstance();
+            current_date.add(Calendar.MINUTE, -25);
+            Calendar date_created = Calendar.getInstance();
+            date_created.setTime(SQLUtil.toDate((String) token.get("created") , SQLUtil.FORMAT_TIMESTAMP));
+            
+            //Check if token is still valid within the time frame
+            //Request new access token if not in the current period range
+            if(current_date.after(date_created)){
+                String[] xargs = new String[] {(String) token.get("parent"), access};
+                RequestAccess.main(xargs);
+                token = (JSONObject)oParser.parse(new FileReader(access));
+            }
+            
+            return (String)token.get("access_key");
+        } catch (IOException | ParseException ex) {
+            return null;
+        }
     }
 }

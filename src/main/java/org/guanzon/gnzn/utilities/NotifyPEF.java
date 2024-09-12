@@ -1,4 +1,4 @@
-package org.guanzon.gnzn.utilities;
+package org.guanzon.gnzn.utilities.mis;
 
 import java.io.FileInputStream;
 import java.io.IOException;

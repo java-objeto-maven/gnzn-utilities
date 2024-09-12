@@ -49,13 +49,22 @@ public class SendPaySlip {
                 System.exit(1);
             }
             
-            String sender;
+            String sender = "";
             
             //set guanzon SMTP configuration as default
-            if(args.length == 0)
+            if (args.length == 0){
                 sender = "guanzon";
-            else
+                System.setProperty("sEmployID", "");
+            } else if (args.length == 1){
                 sender = args[0];
+                System.setProperty("sEmployID", "");
+            } else if (args.length == 2){
+                sender = args[0];
+                System.setProperty("sEmployID", args[1]);
+            } else {
+                System.err.println("Invalid parameters detected.");
+                System.exit(1);
+            }
             
             ResultSet rsToSend = extract2send(sender);
             
@@ -189,8 +198,12 @@ public class SendPaySlip {
                                 " AND a.sBranchCd NOT IN (SELECT sBranchCd FROM Branch WHERE IFNULL(sEmailAdd, '') = '')" +
                             " ORDER BY e.sEmailAdd DESC" + 
                             (sender.compareToIgnoreCase("ymail") == 0 ? " LIMIT 150" : " LIMIT 350");
+            
+            if (!System.getProperty("sEmployID").isEmpty()){
+                lsSQL = MiscUtil.addCondition(lsSQL, "a.sEmployID = " + SQLUtil.toSQL(System.getProperty("sEmployID")));
+            }
 
-            //" ORDER BY e.sBranchCD DESC, sEmployNm"
+            System.out.println(lsSQL);
             rs = instance.getConnection().createStatement().executeQuery(lsSQL);
         } catch (SQLException ex) {
             logwrapr.severe("extract2send: SQLException error detected.", ex);

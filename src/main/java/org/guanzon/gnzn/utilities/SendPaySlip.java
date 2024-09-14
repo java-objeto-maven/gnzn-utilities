@@ -1,4 +1,4 @@
-package org.guanzon.gnzn.utilities.mis;
+package org.guanzon.gnzn.utilities;
 
 import java.io.FileInputStream;
 import java.io.FileWriter;

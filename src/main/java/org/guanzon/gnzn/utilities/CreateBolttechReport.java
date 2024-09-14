@@ -8,9 +8,9 @@ import org.guanzon.appdriver.base.LogWrapper;
 import org.guanzon.gnzn.utilities.lib.cp.Bolttech;
 import org.json.simple.JSONObject;
 
-public class SendBolttech {
+public class CreateBolttechReport {
     public static void main(String[] args) {
-        LogWrapper logwrapr = new LogWrapper("SendBolttech", "bolttech.log");
+        LogWrapper logwrapr = new LogWrapper("CreateBolttechReport", "bolttech.log");
         
         String path;
         if(System.getProperty("os.name").toLowerCase().contains("win")){
@@ -43,19 +43,7 @@ public class SendBolttech {
             
             JSONObject json;
             
-            json = trans.NewTransaction();
-            
-            if (!((String) json.get("result")).equals("success")){
-                logwrapr.severe((String) json.get("message"));
-            } 
-            
-            json = trans.CreateCSV();
-            
-            if (!((String) json.get("result")).equals("success")){
-                logwrapr.severe((String) json.get("message"));
-            }
-            
-            json = trans.UploadFile();
+            json = trans.CreateReport("2024-09-01", "2024-09-30");
             
             if (!((String) json.get("result")).equals("success")){
                 logwrapr.severe((String) json.get("message"));

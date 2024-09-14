@@ -1,6 +1,6 @@
 package org.guanzon.gnzn.utilities.test;
 
-import org.guanzon.gnzn.utilities.mis.SendPaySlip;
+import org.guanzon.gnzn.utilities.SendPaySlip;
 
 public class testSendPayslipEmail {
     public static void main(String[] args) {

@@ -56,6 +56,7 @@ public class SendPaySlipApp {
             
             if (MiscUtil.RecordCount(rsToSend) <= 0){
                 System.out.println("No record to send.");
+                SendPaySlip.main(args);
                 System.exit(0);
             }
             

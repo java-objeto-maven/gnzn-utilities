@@ -48,7 +48,6 @@ public class ExportSPPOReturn {
                             " FROM SP_PO_Return_Master" +
                             " WHERE sTransNox LIKE 'M095%'" +
                                 " AND dTransact >= '2021-01-01'" +
-                                " AND cTranStat <> '2'" +
                             " ORDER BY sTransNox";
             
             ResultSet loRS = instance.executeQuery(lsSQL);

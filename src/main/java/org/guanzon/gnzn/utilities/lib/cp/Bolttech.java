@@ -21,6 +21,7 @@ import org.guanzon.appdriver.base.CommonUtils;
 import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
+import org.guanzon.appdriver.base.StringHelper;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -29,6 +30,7 @@ public class Bolttech {
     private final String UPLOAD = System.getProperty("sys.default.path.config") + "/temp/Bolttech/upload/";
     private final String SUCCESS = System.getProperty("sys.default.path.config") + "/temp/Bolttech/success/";
     private final String FAILED = System.getProperty("sys.default.path.config") + "/temp/Bolttech/failed/";
+    private final String REPORT = System.getProperty("sys.default.path.config") + "/temp/Bolttech/report/";
     
     GRider _instance;
     
@@ -42,7 +44,8 @@ public class Bolttech {
         String lsSQL;
         
         //get transactions that is not yet extracted
-        lsSQL = getSQ_Master();
+        lsSQL = getSQ_Master() + " AND xTransNox IS NULL" +
+                " ORDER BY a.dTransact";
         
         ResultSet loRS = _instance.executeQuery(lsSQL);
         
@@ -51,7 +54,14 @@ public class Bolttech {
             JSONObject loJSONDet;
             
             while (loRS.next()){
-                lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = " + SQLUtil.toSQL(loRS.getString("sTransNox")));
+                switch(loRS.getString("sTransNox")){
+                    //multiple SI on single transaction
+                    case "C03523004351": //SELECT * FROM `CP_SO_Master` WHERE sTransNox LIKE 'C035%' AND sSalesInv IN ('75376', '75375');
+                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = 'C03524003338'");
+                        break;
+                    default:
+                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = " + SQLUtil.toSQL(loRS.getString("sTransNox")));
+                }
                 
                 loDetail = _instance.executeQuery(lsSQL);
                 
@@ -61,17 +71,33 @@ public class Bolttech {
                     for (int lnCtr = 1; lnCtr <= loDetail.getMetaData().getColumnCount(); lnCtr++){
                         switch (loDetail.getMetaData().getColumnLabel(lnCtr)){
                         case "IMEI":
-                            if (loDetail.getString("BRAND_ID").equals("C001058")){ //iphone
-                                loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), "");
-                            } else {
+//                            if (loDetail.getString("BRAND_ID").equals("C001058")){ //iphone
+//                                loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), "");
+//                            } else {
+//                                loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), loDetail.getObject(lnCtr));
+//                            }
+                            
+                            if (loDetail.getObject(lnCtr).toString().length() <= 15 &&
+                                StringHelper.isNumeric(loDetail.getObject(lnCtr).toString())){
+                                
                                 loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), loDetail.getObject(lnCtr));
+                            } else {
+                                loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), "");
                             }
                             break;
                         case "SERIALNO":
-                            if (loDetail.getString("BRAND_ID").equals("C001058")){ //iphone
-                                loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), loDetail.getObject(lnCtr));
-                            } else {
+//                            if (loDetail.getString("BRAND_ID").equals("C001058")){ //iphone
+//                                loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), loDetail.getObject(lnCtr));
+//                            } else {
+//                                loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), "");
+//                            }
+                            
+                            if (loDetail.getObject(lnCtr).toString().length() <= 15 &&
+                                StringHelper.isNumeric(loDetail.getObject(lnCtr).toString())){
+                                
                                 loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), "");
+                            } else {
+                                loJSONDet.put(loDetail.getMetaData().getColumnLabel(lnCtr), loDetail.getObject(lnCtr));
                             }
                             break;
                         case "DTIME_START":
@@ -332,6 +358,87 @@ public class Bolttech {
         return loJSON;
     }
     
+    public JSONObject CreateReport(String fdDateFrom, String fdDateThru){
+        String lsSQL = MiscUtil.addCondition(getSQ_Sent(), 
+                            "b.dTransact BETWEEN " + SQLUtil.toSQL(fdDateFrom) + " AND " + SQLUtil.toSQL(fdDateThru));
+              
+        ResultSet loRS = _instance.executeQuery(lsSQL);
+        
+        JSONObject loJSON = new JSONObject();
+        
+        if (MiscUtil.RecordCount(loRS) <= 0){
+            loJSON.put("result", "success");
+            loJSON.put("message", "No record found.");
+            return loJSON;
+        }
+        
+        String lsFilename = "Bolttech " + SQLUtil.dateFormat(_instance.getServerDate(), SQLUtil.FORMAT_TIMESTAMPX) + ".csv";
+        
+        try (CSVWriter writer = new CSVWriter(new FileWriter(REPORT + lsFilename))){
+            String [] header = new String[22];
+            header[0] = "SI_NUMBER";
+            header[1] = "CONTRACT_SOLD_DATE";
+            header[2] = "PRODUCT_NAME";
+            header[3] = "PRODUCT_AMOUNT";
+            header[4] = "CUST_NAME";
+            header[5] = "CUST_MOBILE_NO";
+            header[6] = "CUST_EMAIL";
+            header[7] = "CUST_ADDRESS";
+            header[8] = "CUST_CITY";
+            header[9] = "STORE_CODE";
+            header[10] = "STORE_NAME";
+            header[11] = "STORE_ADDRESS";
+            header[12] = "STORE_CITY";
+            header[13] = "SALES_REP_ID";
+            header[14] = "SALES_REP_NAME";
+            header[15] = "DEVICE_TYPE";
+            header[16] = "DEVICE_MAKE";
+            header[17] = "DEVICE_MODEL";
+            header[18] = "COLOR";
+            header[19] = "DEVICE_RRP";
+            header[20] = "IMEI";
+            header[21] = "SERIALNO";
+            writer.writeNext(header);
+            
+            JSONParser loParser = new JSONParser();
+            
+            while (loRS.next()){
+                loJSON = (JSONObject) loParser.parse(loRS.getString("sPayloadx"));
+                
+                lsSQL = MiscUtil.addCondition(getSQ_Master(), "a.sTransNox = " + SQLUtil.toSQL(loRS.getString("sSourceNo")));
+                ResultSet loRx = _instance.executeQuery(lsSQL);
+                
+                String [] row = new String[header.length];
+                
+                for (int i = 0; i <= header.length-1; i++){
+                    switch(header[i]){
+                        case "SI_NUMBER":
+                            row[i] = loJSON.get("CLIENT_TRANS_NO").toString();
+                            break;
+                        case "PRODUCT_AMOUNT":
+                            if (loRx.next()){
+                                row[i] = String.valueOf(loRx.getDouble("nUnitPrce"));
+                            } else {
+                                row[i] = "0.00";
+                            }
+                            break;
+                        default:
+                            row[i] = loJSON.get(header[i]).toString();
+                    }
+                                        
+                }
+                writer.writeNext(row);
+            }
+            loJSON.put("result", "success");
+            loJSON.put("message", "Report exported successfully.");
+        } catch (SQLException | IOException | ParseException e) {
+            loJSON.put("result", "error");
+            loJSON.put("message", e.getMessage());
+        }
+        
+        return loJSON;
+    }
+    
     private void loadConfig() throws IOException{
         Properties props = new Properties();
         props.load(new FileInputStream(System.getProperty("sys.default.path.config") + "/config/maven.properties"));
@@ -351,8 +458,9 @@ public class Bolttech {
                     ", c.sCategID2" +
                     ", f.sCategrNm" +
                     ", e.sTransNox xTransNox" +
+                    ", b.nUnitPrce" +
                 " FROM CP_SO_Master a" +
-                    " LEFT JOIN CP_SO_Insurance e ON a.sTransNox = e.sSourceNo" +
+                    " LEFT JOIN CP_SO_Insurance e ON a.sTransNox = e.sSourceNo AND e.cTranStat <> '3'" +
                     ", CP_SO_Detail b" +
                         " LEFT JOIN CP_Inventory c ON b.sStockIDx = c.sStockIDx" +
                         " LEFT JOIN Category d ON c.sCategID1 = d.sCategrID" +
@@ -360,8 +468,7 @@ public class Bolttech {
                 " WHERE a.sTransNox = b.sTransNox" +
                     " AND a.cTranStat NOT IN ('3', '7')" +
                     " AND a.dTransact >= '2024-06-27'" +
-                " HAVING c.sCategID1 = 'C001052'" +
-                    " AND xTransNox IS NULL";
+                " HAVING c.sCategID1 = 'C001052'";
     }
     
     private String getSQ_Detail(){
@@ -380,7 +487,7 @@ public class Bolttech {
                     ", '' STORE_ADDRESS" + 
                     ", i.sTownName STORE_CITY" + 
                     ", a.sSalesman SALES_REP_ID" + 
-                    ", TRIM(CONCAT(k.sFrstName, ' ', k.sLastName)) SALES_REP_NAME" + 
+                    ", IFNULL(TRIM(CONCAT(k.sFrstName, ' ', k.sLastName)), '') SALES_REP_NAME" + 
                     ", c.nPurchase DEVICE_RRP" + 
                     ", e.sCategrNm DEVICE_TYPE" + 
                     ", l.sBrandNme DEVICE_MAKE" + 
@@ -399,6 +506,7 @@ public class Bolttech {
                     ", c.sBrandIDx BRAND_ID" +
                     ", c.sCategID2 CATEG_ID" +
                     ", c.sCategID4 CATEG_ID4" +
+                    ", b.nUnitPrce PRODUCT_AMOUNT" +
                 " FROM CP_SO_Master a" + 
                         " LEFT JOIN Client_Master g ON a.sClientID = g.sClientID" + 
                         " LEFT JOIN TownCity j ON g.sTownIDxx = j.sTownIDxx" + 
@@ -426,5 +534,24 @@ public class Bolttech {
                 " FROM CP_SO_Insurance" +
                 " WHERE cTranStat = '0'" +
                     " AND sBatchNox IS NULL";
+    }
+    
+    private String getSQ_Sent(){
+        return "SELECT" +
+                    "  a.sTransNox" +
+                    ", a.sSourceNo" +
+                    ", b.dTransact" +
+                    ", a.sPayloadx" +
+                    ", c.sFileName" +
+                    ", c.dCreatedx" +
+                    ", c.dDateSent" +
+                " FROM CP_SO_Insurance a" +
+                    ", CP_SO_Master b" +
+                    ", Bolttech c" +
+                " WHERE a.sSourceNo = b.sTransNox" +
+                    " AND a.sBatchNox = c.sBatchNox" +
+                    " AND a.cTranStat = '1'" +
+                    " AND c.cTranStat = '1'" +
+                " ORDER BY b.dTransact";
     }
 }

@@ -49,7 +49,6 @@ public class ExportSPTransfer {
                                 " LEFT JOIN Branch b ON a.sDestinat = b.sBranchCd" +
                             " WHERE a.sTransNox LIKE 'M095%'" +
                                 " AND a.dTransact >= '2021-01-01'" +
-                                " AND a.cTranStat <> '2'" +
                             " ORDER BY a.sTransNox";
             
             ResultSet loRS = instance.executeQuery(lsSQL);
@@ -92,17 +91,17 @@ public class ExportSPTransfer {
                 writer.append('\n');
                 
                 while (loRS.next()){
-                    writer.append(loRS.getString("sTransNox"));
+                    writer.append(loRS.getString("sTransNox").replace(",", " "));
                     writer.append(',');
-                    writer.append(loRS.getString("dTransact"));
+                    writer.append(loRS.getString("dTransact").replace(",", " "));
                     writer.append(',');
-                    writer.append(loRS.getString("sBranchNm"));
+                    writer.append(loRS.getString("sBranchNm").replace(",", " "));
                     writer.append(',');
-                    writer.append(loRS.getString("sRemarksx"));
+                    writer.append(loRS.getString("sRemarksx").replace(",", " "));
                     writer.append(',');
-                    writer.append(String.valueOf(loRS.getDouble("nTranTotl")));
+                    writer.append(String.valueOf(loRS.getDouble("nTranTotl")).replace(",", " "));
                     writer.append(',');
-                    writer.append(loRS.getString("cTranStat"));
+                    writer.append(loRS.getString("cTranStat").replace(",", " "));
                     writer.append(',');
 
                     lsSQL = "SELECT * FROM xxxReplicationLog" +
@@ -114,11 +113,11 @@ public class ExportSPTransfer {
 
                     //transaction creation
                     if (loRx.next()){
-                        writer.append(loRx.getString("dEntryDte"));
+                        writer.append(loRx.getString("dEntryDte").replace(",", " "));
                         writer.append(',');
-                        writer.append(getUserName(instance, loRx.getString("sModified")));
+                        writer.append(getUserName(instance, loRx.getString("sModified")).replace(",", " "));
                         writer.append(',');
-                        writer.append(loRx.getString("sModified"));
+                        writer.append(loRx.getString("sModified").replace(",", " "));
                         writer.append(',');
                     } else {
                         writer.append("");
@@ -138,11 +137,11 @@ public class ExportSPTransfer {
                     loRx = instance.executeQuery(lsSQL);
 
                     if (loRx.next()){
-                        writer.append(loRx.getString("dEntryDte"));
+                        writer.append(loRx.getString("dEntryDte").replace(",", " "));
                         writer.append(',');
-                        writer.append(getUserName(instance, loRx.getString("sModified")));
+                        writer.append(getUserName(instance, loRx.getString("sModified")).replace(",", " "));
                         writer.append(',');
-                        writer.append(loRx.getString("sModified"));
+                        writer.append(loRx.getString("sModified").replace(",", " "));
                         writer.append(',');
                     } else {
                         writer.append("");
@@ -162,11 +161,11 @@ public class ExportSPTransfer {
                     loRx = instance.executeQuery(lsSQL);
 
                     if (loRx.next()){
-                        writer.append(loRx.getString("dEntryDte"));
+                        writer.append(loRx.getString("dEntryDte").replace(",", " "));
                         writer.append(',');
-                        writer.append(getUserName(instance, loRx.getString("sModified")));
+                        writer.append(getUserName(instance, loRx.getString("sModified")).replace(",", " "));
                         writer.append(',');
-                        writer.append(loRx.getString("sModified"));
+                        writer.append(loRx.getString("sModified").replace(",", " "));
                         writer.append('\n');
                     } else {
                         writer.append("");

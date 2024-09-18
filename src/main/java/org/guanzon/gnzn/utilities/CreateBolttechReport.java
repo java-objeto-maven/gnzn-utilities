@@ -5,14 +5,12 @@ import java.io.IOException;
 import java.util.Properties;
 import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.LogWrapper;
-import org.guanzon.appdriver.base.SQLUtil;
-import org.guanzon.gnzn.utilities.lib.hcm.ILoveMyJob;
-import org.guanzon.gnzn.utilities.lib.hcm.ILoveMyJobValidator;
+import org.guanzon.gnzn.utilities.lib.cp.Bolttech;
+import org.json.simple.JSONObject;
 
-public class CreateILMJ {
+public class CreateBolttechReport {
     public static void main(String[] args) {
-        LogWrapper logwrapr = new LogWrapper("CreateILMJ", "gnzn-utilities.log");
-        logwrapr.info("Start of Process!");
+        LogWrapper logwrapr = new LogWrapper("CreateBolttechReport", "bolttech.log");
         
         String path;
         if(System.getProperty("os.name").toLowerCase().contains("win")){
@@ -24,39 +22,32 @@ public class CreateILMJ {
         System.setProperty("sys.default.path.config", path);
         
         try {
-            Properties po_props = new Properties();
-            po_props.load(new FileInputStream(path + "/config/cas.properties"));
+            Properties props = new Properties();
+            props.load(new FileInputStream(path + "/config/cas.properties"));
             
             GRider instance = null;
                     
-            if (po_props.getProperty("developer.mode").equals("1")){
+            if (props.getProperty("developer.mode").equals("1")){
                 instance = new GRider("gRider");
         
                 if (!instance.logUser("gRider", "M001000001")){
                     System.err.println(instance.getErrMsg());
                     System.exit(1);
                 }
-                
-                System.setProperty("ilmj.main.office", po_props.getProperty("ilmj.main.office"));
             } else {
                 System.err.println("Unable to log user.");
                 System.exit(1);
             }
             
-            ILoveMyJobValidator utility;
+            Bolttech trans = new Bolttech(instance);
             
-            utility = ILoveMyJob.make(ILoveMyJob.Type.EMPLOYEE);
-            utility.setGRider(instance);
-            utility.setWithParent(true);
-
-            if (!utility.Run("MX01", SQLUtil.dateFormat(instance.getServerDate(), SQLUtil.FORMAT_SHORT_DATE), "")){
-                System.err.println(utility.getMessage());
-                logwrapr.info("Error!!!");
-                System.exit(1);
+            JSONObject json;
+            
+            json = trans.CreateReport("2024-09-01", "2024-09-30");
+            
+            if (!((String) json.get("result")).equals("success")){
+                logwrapr.severe((String) json.get("message"));
             }
-            
-            System.out.print("Raffle entries created successfully.");
-            
         } catch (IOException e) {
             System.exit(1);
         }

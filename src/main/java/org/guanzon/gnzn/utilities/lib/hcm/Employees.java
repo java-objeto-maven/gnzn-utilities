@@ -349,7 +349,7 @@ public class Employees implements ILoveMyJobValidator{
                             " AND a.sUserIDxx = f.sUserIDxx" + 
                             " AND a.sProdctID = 'gRider'" + 
                             " AND a.cActivatd = '1'" + 
-                            " AND b.sBranchCd IN ('GK01', 'M001', 'M0W1')" +
+                            " AND b.sBranchCd IN " + System.getProperty("ilmj.main.office") +
                             " AND b.sDeptIDxx <> '015'" +
                             " AND a.sEmployNo is NOT NULL" + 
                             " AND b.dFiredxxx IS NULL" + 

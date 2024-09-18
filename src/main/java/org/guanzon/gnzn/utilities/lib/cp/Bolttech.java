@@ -44,7 +44,8 @@ public class Bolttech {
         String lsSQL;
         
         //get transactions that is not yet extracted
-        lsSQL = getSQ_Master() + " AND xTransNox IS NULL";
+        lsSQL = getSQ_Master() + " AND xTransNox IS NULL" +
+                " ORDER BY a.dTransact";
         
         ResultSet loRS = _instance.executeQuery(lsSQL);
         
@@ -53,7 +54,14 @@ public class Bolttech {
             JSONObject loJSONDet;
             
             while (loRS.next()){
-                lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = " + SQLUtil.toSQL(loRS.getString("sTransNox")));
+                switch(loRS.getString("sTransNox")){
+                    //multiple SI on single transaction
+                    case "C03523004351": //SELECT * FROM `CP_SO_Master` WHERE sTransNox LIKE 'C035%' AND sSalesInv IN ('75376', '75375');
+                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = 'C03524003338'");
+                        break;
+                    default:
+                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = " + SQLUtil.toSQL(loRS.getString("sTransNox")));
+                }
                 
                 loDetail = _instance.executeQuery(lsSQL);
                 
@@ -364,7 +372,7 @@ public class Bolttech {
             return loJSON;
         }
         
-        String lsFilename = "Bolttech " + SQLUtil.dateFormat(_instance.getServerDate(), SQLUtil.FORMAT_TIMESTAMPX) + ".xlsx";
+        String lsFilename = "Bolttech " + SQLUtil.dateFormat(_instance.getServerDate(), SQLUtil.FORMAT_TIMESTAMPX) + ".csv";
         
         try (CSVWriter writer = new CSVWriter(new FileWriter(REPORT + lsFilename))){
             String [] header = new String[22];
@@ -518,7 +526,7 @@ public class Bolttech {
                     " AND b.sStockIDx = c.sStockIDx" + 
                     " AND LEFT(a.sTransNox,4) = d.sBranchCd" + 
                     " AND a.cTranStat NOT IN ('3', '7')" +
-                " HAVING PRODUCT_NAME = 'Units'  || PRODUCT_NAME = 'Wearables'";
+                " HAVING PRODUCT_NAME = 'Units'";
     }
     
     private String getSQ_Batch(){

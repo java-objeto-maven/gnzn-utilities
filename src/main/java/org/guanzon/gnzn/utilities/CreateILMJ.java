@@ -36,6 +36,8 @@ public class CreateILMJ {
                     System.err.println(instance.getErrMsg());
                     System.exit(1);
                 }
+                
+                System.setProperty("ilmj.main.office", po_props.getProperty("ilmj.main.office"));
             } else {
                 System.err.println("Unable to log user.");
                 System.exit(1);

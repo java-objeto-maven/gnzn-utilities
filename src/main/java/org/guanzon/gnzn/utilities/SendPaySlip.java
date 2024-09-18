@@ -1,7 +1,6 @@
 package org.guanzon.gnzn.utilities;
 
 import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -52,18 +51,22 @@ public class SendPaySlip {
             String sender = "";
             
             //set guanzon SMTP configuration as default
-            if (args.length == 0){
-                sender = "guanzon";
-                System.setProperty("sEmployID", "");
-            } else if (args.length == 1){
-                sender = args[0];
-                System.setProperty("sEmployID", "");
-            } else if (args.length == 2){
-                sender = args[0];
-                System.setProperty("sEmployID", args[1]);
-            } else {
-                System.err.println("Invalid parameters detected.");
-                System.exit(1);
+            switch (args.length) {
+                case 0:
+                    sender = "guanzon";
+                    System.setProperty("sEmployID", "");
+                    break;
+                case 1:
+                    sender = args[0];
+                    System.setProperty("sEmployID", "");
+                    break;
+                case 2:
+                    sender = args[0];
+                    System.setProperty("sEmployID", args[1]);
+                    break;
+                default:
+                    System.err.println("Invalid parameters detected.");
+                    System.exit(1);
             }
             
             ResultSet rsToSend = extract2send(sender);
@@ -85,44 +88,46 @@ public class SendPaySlip {
                     while(rsToSend.next()){
                         String lsEmail;
                         
-                        //reroute email to branch and department email...
-                        if(rsToSend.getString("sEmailAdd").isEmpty()){
-                            if(rsToSend.getString("sBranchCD").equalsIgnoreCase("M029") && 
-                                rsToSend.getString("sDeptIDxx").equalsIgnoreCase("015")){
-                                lsEmail = rsToSend.getString("sBranchMl");
-                            } else if(rsToSend.getString("sBranchCD").equalsIgnoreCase("M001") && 
-                                rsToSend.getString("sDeptIDxx").equalsIgnoreCase("015")){
-                                lsEmail = rsToSend.getString("sBranchMl");
-                            } else if(rsToSend.getString("sBranchCD").equalsIgnoreCase("PHO1") && 
-                                (rsToSend.getString("sDeptIDxx").equalsIgnoreCase("015") ||
-                                    rsToSend.getString("sDeptIDxx").equalsIgnoreCase("040"))){
-                                lsEmail = rsToSend.getString("sBranchMl");
-                            } else{
-                                lsEmail = rsToSend.getString("sDeptMail");
-                            }
-                        } else if(!rsToSend.getString("sEmailAdd").contains("gmail")){
-                            lsEmail = rsToSend.getString("sEmailAdd");
-                        } else if(!rsToSend.getString("sEmpLevID").equalsIgnoreCase("0")  ){
-                            lsEmail = rsToSend.getString("sEmailAdd");
-                        } else if(rsToSend.getString("cMainOffc").contains("1")){
-                            if(rsToSend.getString("sBranchCD").equalsIgnoreCase("M029") && 
-                                rsToSend.getString("sDeptIDxx").equalsIgnoreCase("015")){
-                                lsEmail = rsToSend.getString("sBranchMl");
-                            } else if(rsToSend.getString("sBranchCD").equalsIgnoreCase("M001") && 
-                                rsToSend.getString("sDeptIDxx").equalsIgnoreCase("015")){
-                                lsEmail = rsToSend.getString("sBranchMl");
-                            } else if(rsToSend.getString("sBranchCD").equalsIgnoreCase("PHO1") && 
-                                (rsToSend.getString("sDeptIDxx").equalsIgnoreCase("015") ||
-                                    rsToSend.getString("sDeptIDxx").equalsIgnoreCase("040"))){
-                                lsEmail = rsToSend.getString("sBranchMl");
-                            } else{
-                                lsEmail = rsToSend.getString("sDeptMail");
-                            }
-                        } else{
-                            lsEmail = rsToSend.getString("sBranchMl");
-                        }
-
-                        //System.out.println(rsToSend.getString("sEmployNm") + "\t" + lsEmail);
+                        //mac 2024.09.17 01:55pm
+                        //send mail on personal address since guanzon mail can now send to gmail
+                        lsEmail = rsToSend.getString("sEmailAdd");
+                        
+//                        //reroute email to branch and department email...
+//                        if(rsToSend.getString("sEmailAdd").isEmpty()){
+//                            if(rsToSend.getString("sBranchCD").equalsIgnoreCase("M029") && 
+//                                rsToSend.getString("sDeptIDxx").equalsIgnoreCase("015")){
+//                                lsEmail = rsToSend.getString("sBranchMl");
+//                            } else if(rsToSend.getString("sBranchCD").equalsIgnoreCase("M001") && 
+//                                rsToSend.getString("sDeptIDxx").equalsIgnoreCase("015")){
+//                                lsEmail = rsToSend.getString("sBranchMl");
+//                            } else if(rsToSend.getString("sBranchCD").equalsIgnoreCase("PHO1") && 
+//                                (rsToSend.getString("sDeptIDxx").equalsIgnoreCase("015") ||
+//                                    rsToSend.getString("sDeptIDxx").equalsIgnoreCase("040"))){
+//                                lsEmail = rsToSend.getString("sBranchMl");
+//                            } else{
+//                                lsEmail = rsToSend.getString("sDeptMail");
+//                            }
+//                        } else if(!rsToSend.getString("sEmailAdd").contains("gmail")){
+//                            lsEmail = rsToSend.getString("sEmailAdd");
+//                        } else if(!rsToSend.getString("sEmpLevID").equalsIgnoreCase("0")  ){
+//                            lsEmail = rsToSend.getString("sEmailAdd");
+//                        } else if(rsToSend.getString("cMainOffc").contains("1")){
+//                            if(rsToSend.getString("sBranchCD").equalsIgnoreCase("M029") && 
+//                                rsToSend.getString("sDeptIDxx").equalsIgnoreCase("015")){
+//                                lsEmail = rsToSend.getString("sBranchMl");
+//                            } else if(rsToSend.getString("sBranchCD").equalsIgnoreCase("M001") && 
+//                                rsToSend.getString("sDeptIDxx").equalsIgnoreCase("015")){
+//                                lsEmail = rsToSend.getString("sBranchMl");
+//                            } else if(rsToSend.getString("sBranchCD").equalsIgnoreCase("PHO1") && 
+//                                (rsToSend.getString("sDeptIDxx").equalsIgnoreCase("015") ||
+//                                    rsToSend.getString("sDeptIDxx").equalsIgnoreCase("040"))){
+//                                lsEmail = rsToSend.getString("sBranchMl");
+//                            } else{
+//                                lsEmail = rsToSend.getString("sDeptMail");
+//                            }
+//                        } else{
+//                            lsEmail = rsToSend.getString("sBranchMl");
+//                        }
                         
                         String lsSQL;
                         
@@ -179,6 +184,25 @@ public class SendPaySlip {
     private static ResultSet extract2send(String sender){
         ResultSet rs = null;
         try {  
+//            String lsSQL = "SELECT a.sBranchCD, a.sPayPerID, a.sEmployID, IFNULL(b.sEmailAdd, '') sEmailAdd, c.dPeriodFr, c.dPeriodTo, CONCAT(b.sLastName, ', ', b.sFrstname) sEmployNm" +
+//                                ", IFNULL(e.sEmailAdd, '') sBranchMl" +
+//                                ", IFNULL(d.sEmailAdd, '') sDeptMail" +
+//                                ", IFNULL(i.sEmpLevID, '0') sEmpLevID" +
+//                                ", f.cDivision" +
+//                                ", a.sDeptIDxx" +
+//                                ", i.sBranchCD" +
+//                                ", e.cMainOffc" +
+//                            " FROM Payroll_Summary_New a" +
+//                                " LEFT JOIN Client_Master b ON a.sEmployID = b.sClientID" +
+//                                " LEFT JOIN Payroll_Period c ON a.sPayPerID = c.sPayPerID" +
+//                                " LEFT JOIN Employee_Master001 i ON a.sEmployID = i.sEmployID" + 
+//                                " LEFT JOIN Department d ON i.sDeptIDxx = d.sDeptIDxx" + 
+//                                " LEFT JOIN Branch e ON i.sBranchCD = e.sBranchCD" + 
+//                                " LEFT JOIN Branch_Others f ON i.sBranchCD = f.sBranchCD" + 
+//                            " WHERE a.cMailSent = '1'" +       
+//                                " AND a.sBranchCd NOT IN (SELECT sBranchCd FROM Branch WHERE IFNULL(sEmailAdd, '') = '')" +
+//                            " ORDER BY e.sEmailAdd DESC" + 
+//                            (sender.compareToIgnoreCase("ymail") == 0 ? " LIMIT 150" : " LIMIT 350");
             String lsSQL = "SELECT a.sBranchCD, a.sPayPerID, a.sEmployID, IFNULL(b.sEmailAdd, '') sEmailAdd, c.dPeriodFr, c.dPeriodTo, CONCAT(b.sLastName, ', ', b.sFrstname) sEmployNm" +
                                 ", IFNULL(e.sEmailAdd, '') sBranchMl" +
                                 ", IFNULL(d.sEmailAdd, '') sDeptMail" +
@@ -187,6 +211,8 @@ public class SendPaySlip {
                                 ", a.sDeptIDxx" +
                                 ", i.sBranchCD" +
                                 ", e.cMainOffc" +
+                                ", i.cRecdStat" +
+                                ", i.cSalTypex" +
                             " FROM Payroll_Summary_New a" +
                                 " LEFT JOIN Client_Master b ON a.sEmployID = b.sClientID" +
                                 " LEFT JOIN Payroll_Period c ON a.sPayPerID = c.sPayPerID" +
@@ -195,9 +221,10 @@ public class SendPaySlip {
                                 " LEFT JOIN Branch e ON i.sBranchCD = e.sBranchCD" + 
                                 " LEFT JOIN Branch_Others f ON i.sBranchCD = f.sBranchCD" + 
                             " WHERE a.cMailSent = '1'" +       
-                                " AND a.sBranchCd NOT IN (SELECT sBranchCd FROM Branch WHERE IFNULL(sEmailAdd, '') = '')" +
+                                " AND IFNULL(b.sEmailAdd, '') <> ''" +
+                            " HAVING i.cRecdStat = '1' AND i.cSalTypex <> 'S'" +
                             " ORDER BY e.sEmailAdd DESC" + 
-                            (sender.compareToIgnoreCase("ymail") == 0 ? " LIMIT 150" : " LIMIT 350");
+                            (sender.compareToIgnoreCase("guanzon") == 0 ? " LIMIT 150" : " LIMIT 350");
             
             if (!System.getProperty("sEmployID").isEmpty()){
                 lsSQL = MiscUtil.addCondition(lsSQL, "a.sEmployID = " + SQLUtil.toSQL(System.getProperty("sEmployID")));

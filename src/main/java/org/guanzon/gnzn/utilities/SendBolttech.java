@@ -41,21 +41,7 @@ public class SendBolttech {
             
             Bolttech trans = new Bolttech(instance);
             
-            JSONObject json;
-            
-            json = trans.NewTransaction();
-            
-            if (!((String) json.get("result")).equals("success")){
-                logwrapr.severe((String) json.get("message"));
-            } 
-            
-            json = trans.CreateCSV();
-            
-            if (!((String) json.get("result")).equals("success")){
-                logwrapr.severe((String) json.get("message"));
-            }
-            
-            json = trans.UploadFile();
+            JSONObject json = trans.UploadFile();
             
             if (!((String) json.get("result")).equals("success")){
                 logwrapr.severe((String) json.get("message"));

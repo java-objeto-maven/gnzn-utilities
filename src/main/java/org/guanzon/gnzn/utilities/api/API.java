@@ -14,6 +14,7 @@ import org.json.simple.parser.ParseException;
 public class API {
     public static String GET_GANADO_ONLINE = "https://restgk.guanzongroup.com.ph/gcircle/ganado/download_ganado.php";
     public static String GET_GANADO_ONLINEX = "https://restgk.guanzongroup.com.ph/x-api/v1.0/ganado/download_ganado.php";
+    public static String GET_APP_USER = "https://restgk.guanzongroup.com.ph/x-api/v1.0/ganado/download_app_user.php";
     
     public static HashMap getWSHeader(String fsProdctID){
         String clientid = "GGC_BM001";

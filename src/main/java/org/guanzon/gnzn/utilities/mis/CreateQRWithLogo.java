@@ -7,6 +7,7 @@ public class CreateQRWithLogo {
     public static void main(String[] args) throws Exception {
         String attire = "https://apps.guanzongroup.com.ph/apk/attire.jpg";
         String invitation = "https://apps.guanzongroup.com.ph/apk/video.mp4";
+        String gcircle = "https://apps.guanzongroup.com.ph/apk/gCircle.apk";
         
 //        // ✅ Example with styled label
 //        generateQR(
@@ -46,30 +47,49 @@ public class CreateQRWithLogo {
 //                0f, 0f
 //        );
         
+//        // ✅ Example without label (same as before)
+//        generateQR(
+//                invitation,
+//                "G:\\My Drive\\Guanzon\\Convention 2025\\images\\logo 2.png",
+//                "d:/invitation.png",
+//                600,
+//                Color.WHITE,
+//                Color.BLACK,
+//                8f, 40f,
+//                40f,
+//                0.20f,
+//                Color.WHITE,
+//                Color.BLACK, 3f,
+//                0.10f, 0.25f,
+//                null,                   // no label
+//                "SansSerif", 22f, false, Color.BLACK,
+//                0f, 0f
+//        );
+//        
+//        // ✅ Example without label (same as before)
+//        generateQR(
+//                attire,
+//                "G:\\My Drive\\Guanzon\\Convention 2025\\images\\logo 2.png",
+//                "d:/attire.png",
+//                600,
+//                Color.WHITE,
+//                Color.BLACK,
+//                8f, 40f,
+//                40f,
+//                0.20f,
+//                Color.WHITE,
+//                Color.BLACK, 3f,
+//                0.10f, 0.25f,
+//                null,                   // no label
+//                "SansSerif", 22f, false, Color.BLACK,
+//                0f, 0f
+//        );
+
         // ✅ Example without label (same as before)
         generateQR(
-                invitation,
+                gcircle,
                 "G:\\My Drive\\Guanzon\\Convention 2025\\images\\logo 2.png",
-                "d:/invitation.png",
-                600,
-                Color.WHITE,
-                Color.BLACK,
-                8f, 40f,
-                40f,
-                0.20f,
-                Color.WHITE,
-                Color.BLACK, 3f,
-                0.10f, 0.25f,
-                null,                   // no label
-                "SansSerif", 22f, false, Color.BLACK,
-                0f, 0f
-        );
-        
-        // ✅ Example without label (same as before)
-        generateQR(
-                attire,
-                "G:\\My Drive\\Guanzon\\Convention 2025\\images\\logo 2.png",
-                "d:/attire.png",
+                "d:/gCircle.png",
                 600,
                 Color.WHITE,
                 Color.BLACK,

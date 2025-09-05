@@ -2,13 +2,16 @@ package org.guanzon.gnzn.utilities.test;
 
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
+import java.io.UnsupportedEncodingException;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class testSendOutlookMail {
     public static void main(String[] args) {
         // Replace with your Gmail account and App Password
-        final String username = "xurpas7@gmail.com";
-        final String password = "rppajywjysqwixzf"; // Not your normal Gmail password
+        final String username = "guanzon.events@gmail.com";
+        final String password = "hcewfmkwvvzbfwrt"; // Not your normal Gmail password
 
         // Gmail SMTP server settings
         Properties props = new Properties();
@@ -28,7 +31,7 @@ public class testSendOutlookMail {
         try {
             // Create a new email message
             Message message = new MimeMessage(session);
-            message.setFrom(new InternetAddress(username));
+            message.setFrom(new InternetAddress(username, "Guanzon Convention"));
             message.setRecipients(
                     Message.RecipientType.TO,
                     InternetAddress.parse("michael_cuison07@yahoo.com")
@@ -42,6 +45,8 @@ public class testSendOutlookMail {
             System.out.println("Email sent successfully!");
         } catch (MessagingException e) {
             e.printStackTrace();
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(testSendOutlookMail.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 }

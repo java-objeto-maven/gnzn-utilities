@@ -56,8 +56,8 @@ public class Bolttech {
             while (loRS.next()){
                 switch(loRS.getString("sTransNox")){
                     //multiple SI on single transaction
-                    case "C03523004351": //SELECT * FROM `CP_SO_Master` WHERE sTransNox LIKE 'C035%' AND sSalesInv IN ('75376', '75375');
-                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = 'C03524003338'");
+                    case "C03925001240": //SELECT * FROM `CP_SO_Master` WHERE sTransNox LIKE 'C035%' AND sSalesInv IN ('75376', '75375');
+                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = 'C03925001239'");
                         break;
                     default:
                         lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = " + SQLUtil.toSQL(loRS.getString("sTransNox")));

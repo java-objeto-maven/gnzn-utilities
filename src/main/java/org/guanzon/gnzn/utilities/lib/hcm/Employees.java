@@ -146,7 +146,7 @@ public class Employees implements ILoveMyJobValidator{
                                     " AND cMsgSentx = '0'";
                         _instance.executeUpdate(lsSQL);
                     }
-                } else {
+                } if (_day == DayOfWeek.THURSDAY) {
                     if (SendRegularSystemNotification(rcpts, 
                                                 "I Love My Job Thursdays",
                                                 "Congratulations! You are entitled for 1 ticket on todays raffle draw.")){
@@ -356,10 +356,21 @@ public class Employees implements ILoveMyJobValidator{
                             " AND b.cRecdStat = '1'" + 
                         " GROUP BY a.sUserIDxx" + 
                         " ORDER BY f.dLogInxxx";
+            case FRIDAY:
+                return "SELECT" +
+                            "  a.sBranchCd" +
+                            ", a.sEmployID sUserIDxx" +
+                            ", a.sEmployID" +
+                            ", IFNULL(b.sMobileNo, '') sMobileNo" +
+                            ", b.sCompnyNm" +
+                        " FROM Employee_Master001 a" +
+                            ", Client_Master b" +
+                        " WHERE a.sEmployID = b.sClientID" +
+                            " AND a.sBranchCd = 'M0W1'" +
+                            " AND a.cRecdStat = '1'" +
+                            " AND b.cGenderCd = '1'";
             default:
                 return "SELECT 0 = 1;";
         }
-        
-        
     }
 }

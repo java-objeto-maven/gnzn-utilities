@@ -43,7 +43,7 @@ public class CreateBolttechReport {
             
             JSONObject json;
             
-            json = trans.CreateReportForBolttech("2024-09-01", "2024-09-30");
+            json = trans.CreateReportForBolttech("2024-09-01", "2024-10-10");
             
             if (!((String) json.get("result")).equals("success")){
                 logwrapr.severe((String) json.get("message"));

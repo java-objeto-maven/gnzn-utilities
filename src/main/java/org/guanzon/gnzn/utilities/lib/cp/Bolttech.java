@@ -54,14 +54,56 @@ public class Bolttech {
             JSONObject loJSONDet;
             
             while (loRS.next()){
-                switch(loRS.getString("sTransNox")){
-                    //multiple SI on single transaction
-                    case "C03925001240": //SELECT * FROM `CP_SO_Master` WHERE sTransNox LIKE 'C035%' AND sSalesInv IN ('75376', '75375');
-                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = 'C03925001239'");
-                        break;
-                    default:
-                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = " + SQLUtil.toSQL(loRS.getString("sTransNox")));
+                if (loRS.getString("sPartnerN").isEmpty()){
+                    lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = " + SQLUtil.toSQL(loRS.getString("sTransNox")));
+                } else {
+                    lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = " + SQLUtil.toSQL(loRS.getString("sPartnerN")));
                 }
+                                
+//                switch(loRS.getString("sTransNox")){
+//                    //multiple SI on single transaction
+//                    case "C03523004351": //SELECT * FROM `CP_SO_Master` WHERE sTransNox LIKE 'C035%' AND sSalesInv IN ('75376', '75375');
+//                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = 'C03524003338'");
+//                        break;
+//                    case "C03823001921": //SELECT * FROM `CP_SO_Master` WHERE sTransNox IN ('C03823001921', 'C03824001522');
+//                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = 'C03824001522'");
+//                        break;
+//                    case "C09824000912": //SELECT * FROM CP_SO_Master WHERE sTransNox LIKE 'C098%' AND sSalesInv IN ('0000070', '0000069');
+//                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = 'C09824000898'");
+//                        break;
+//                    case "C09323001003": //Select * FROM CP_SO_Master WHERe sTransNox LIKE 'C093%' AND sSalesInv IN ('1050', '1049');
+//                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = 'C09324000853'");
+//                        break;
+//                    case "C00523103285": //Select * FROM CP_SO_Master WHERe sTransNox LIKE 'C093%' AND sSalesInv IN ('1050', '1049');
+//                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = 'C00524003285'");
+//                        break;
+//                    case "C00623001737": //SELECT * FROM CP_SO_Master WHERE sTransNox LIKE 'C006%' AND sSalesInv IN ('62332', '62331');
+//                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = 'C00624001350'");
+//                        break;
+//                    case "C03523004352": //Select * FROM CP_SO_Master WHERe sTransNox LIKE 'C035%' AND sSalesInv IN ('75705', '00000531');
+//                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = 'C03524003785'");
+//                        break;
+//                    case "C02723005963": //SELECT * FROM CP_SO_Master WHERE sTransNox LIKE 'C027%' AND sSalesInv IN ('91457', '91456');
+//                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = 'C02724004168'");
+//                        break;
+//                    case "C02723005964": //SELECT * FROM CP_SO_Master WHERE sTransNox LIKE 'C027%' AND sSalesInv IN ('91579', '91582');
+//                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = 'C02724004283'");
+//                        break;
+//                    case "C02723005965": //SELECT * FROM CP_SO_Master WHERE sTransNox LIKE 'C027%' AND sSalesInv IN ('91681', '91680');
+//                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = 'C02724004383'");
+//                        break;
+//                    case "C02923002342": //SELECT * FROM CP_SO_Master WHERE sTransNox LIKE 'C029%' AND sSalesInv IN ('43327', '43325');
+//                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = 'C02924001555'");
+//                        break;
+//                    case "C10723001613": //SELECT * FROM CP_SO_Master WHERE sTransNox LIKE 'C107%' AND sSalesInv IN ('0000033', '0000032');
+//                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = 'C10724001120'");
+//                        break;
+//                    case "C07123001867": //SELECT * FROM CP_SO_Master WHERE sTransNox LIKE 'C071%' AND sSalesInv IN ('12724', '12722');
+//                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = 'C07124001312'");
+//                        break;
+//                    default:
+//                        lsSQL = MiscUtil.addCondition(getSQ_Detail(), "a.sTransNox = " + SQLUtil.toSQL(loRS.getString("sTransNox")));
+//                }
                 
                 loDetail = _instance.executeQuery(lsSQL);
                 
@@ -184,19 +226,7 @@ public class Bolttech {
         String lsTransNox = MiscUtil.getNextCode("Bolttech", "sBatchNox", true, _instance.getConnection(), _instance.getBranchCode());
         String lsFilename = "GUAPHTCV_PH_" + SQLUtil.dateFormat(_instance.getServerDate(), SQLUtil.FORMAT_SHORT_DATEX) + ".csv";
         
-        try (CSVWriter writer = new CSVWriter(new FileWriter(UPLOAD + lsFilename))) {
-            lsSQL = "INSERT INTO Bolttech SET" + 
-                        "  sBatchNox = " + SQLUtil.toSQL(lsTransNox) +
-                        ", sFileName = " + SQLUtil.toSQL(lsFilename) +
-                        ", cTranStat = '0'" +
-                        ", dCreatedx = " + SQLUtil.toSQL(SQLUtil.dateFormat(_instance.getServerDate(), SQLUtil.FORMAT_TIMESTAMP));
-                
-            if (_instance.executeUpdate(lsSQL) <= 0) {
-                loJSON.put("result", "error");
-                loJSON.put("message", _instance.getMessage() + "; " + _instance.getErrMsg());
-                return loJSON;
-            }
-            
+        try (CSVWriter writer = new CSVWriter(new FileWriter(UPLOAD + lsFilename))) {            
             String [] header = new String[30];
             header[0] = "CLIENT_TRANS_NO";
             header[1] = "CONTRACT_SOLD_DATE";
@@ -230,22 +260,40 @@ public class Bolttech {
             header[29] = "DWH_UNIQUE_KEY";
             writer.writeNext(header);
             
-            while(loRS.next()){
-                loJSON = (JSONObject) loParser.parse(loRS.getString("sPayloadx"));
-                
-                // Write details
-                String [] row = new String[header.length];
-                
-                for (int i = 0; i <= header.length-1; i++){
-                    row[i] = loJSON.get(header[i]).toString();                    
+            if (MiscUtil.RecordCount(loRS) > 0){
+                while(loRS.next()){
+                    loJSON = (JSONObject) loParser.parse(loRS.getString("sPayloadx"));
+
+                    // Write details
+                    String [] row = new String[header.length];
+
+                    for (int i = 0; i <= header.length-1; i++){
+                        if (loJSON.get(header[i]) == null){
+                            row[i] = "";
+                        } else {
+                            row[i] = loJSON.get(header[i]).toString();                    
+                        }
+                    }
+                    writer.writeNext(row);
+
+                    lsSQL = "UPDATE CP_SO_Insurance SET" +
+                                "  cTranStat = '1'" +
+                                ", sBatchNox = " + SQLUtil.toSQL(lsTransNox) +
+                            " WHERE sTransNox = " + SQLUtil.toSQL(loRS.getString("sTransNox"));
+
+                    if (_instance.executeUpdate(lsSQL) <= 0) {
+                        loJSON.put("result", "error");
+                        loJSON.put("message", _instance.getMessage() + "; " + _instance.getErrMsg());
+                        return loJSON;
+                    }
                 }
-                writer.writeNext(row);
-                
-                lsSQL = "UPDATE CP_SO_Insurance SET" +
-                            "  cTranStat = '1'" +
-                            ", sBatchNox = " + SQLUtil.toSQL(lsTransNox) +
-                        " WHERE sTransNox = " + SQLUtil.toSQL(loRS.getString("sTransNox"));
-                
+
+                lsSQL = "INSERT INTO Bolttech SET" + 
+                            "  sBatchNox = " + SQLUtil.toSQL(lsTransNox) +
+                            ", sFileName = " + SQLUtil.toSQL(lsFilename) +
+                            ", cTranStat = '0'" +
+                            ", dCreatedx = " + SQLUtil.toSQL(SQLUtil.dateFormat(_instance.getServerDate(), SQLUtil.FORMAT_TIMESTAMP));
+
                 if (_instance.executeUpdate(lsSQL) <= 0) {
                     loJSON.put("result", "error");
                     loJSON.put("message", _instance.getMessage() + "; " + _instance.getErrMsg());
@@ -439,6 +487,83 @@ public class Bolttech {
         return loJSON;
     }
     
+    public JSONObject CreateReportForBolttech(String fdDateFrom, String fdDateThru){
+        String lsSQL = MiscUtil.addCondition(getSQ_Sent(), 
+                            "b.dTransact BETWEEN " + SQLUtil.toSQL(fdDateFrom) + " AND " + SQLUtil.toSQL(fdDateThru));
+              
+        ResultSet loRS = _instance.executeQuery(lsSQL);
+        
+        JSONObject loJSON = new JSONObject();
+        
+        if (MiscUtil.RecordCount(loRS) <= 0){
+            loJSON.put("result", "success");
+            loJSON.put("message", "No record found.");
+            return loJSON;
+        }
+        
+        String lsFilename = "Bolttech " + SQLUtil.dateFormat(_instance.getServerDate(), SQLUtil.FORMAT_TIMESTAMPX) + ".csv";
+        
+        try (CSVWriter writer = new CSVWriter(new FileWriter(REPORT + lsFilename))){
+            String [] header = new String[30];
+            header[0] = "CLIENT_TRANS_NO";
+            header[1] = "CONTRACT_SOLD_DATE";
+            header[2] = "PRODUCT_NAME";
+            header[3] = "CUST_NAME";
+            header[4] = "CUST_ID";
+            header[5] = "CUST_MOBILE_NO";
+            header[6] = "CUST_EMAIL";
+            header[7] = "CUST_ADDRESS";
+            header[8] = "CUST_CITY";
+            header[9] = "STORE_CODE";
+            header[10] = "STORE_NAME";
+            header[11] = "STORE_ADDRESS";
+            header[12] = "STORE_CITY";
+            header[13] = "SALES_REP_ID";
+            header[14] = "SALES_REP_NAME";
+            header[15] = "DEVICE_RRP";
+            header[16] = "DEVICE_TYPE";
+            header[17] = "DEVICE_MAKE";
+            header[18] = "DEVICE_MODEL";
+            header[19] = "COLOR";
+            header[20] = "IMEI";
+            header[21] = "NAME_GOODS_TYPE";
+            header[22] = "DTIME_START";
+            header[23] = "DTIME_END";
+            header[24] = "DEVICE_VALUE_SUM_COVERED";
+            header[25] = "CREATION_DATE";
+            header[26] = "SERIALNO";
+            header[27] = "PARTNER_ID";
+            header[28] = "VALUE_ADDED_SERVICES";
+            header[29] = "DWH_UNIQUE_KEY";
+            writer.writeNext(header);
+            
+            JSONParser loParser = new JSONParser();
+            
+            while (loRS.next()){
+                loJSON = (JSONObject) loParser.parse(loRS.getString("sPayloadx"));
+ 
+                String [] row = new String[header.length];
+
+                for (int i = 0; i <= header.length-1; i++){
+                    if (loJSON.get(header[i]) == null){
+                        row[i] = "";
+                    } else {
+                        row[i] = loJSON.get(header[i]).toString();                    
+                    }
+                }
+                
+                writer.writeNext(row);
+            }
+            loJSON.put("result", "success");
+            loJSON.put("message", "Report exported successfully.");
+        } catch (SQLException | IOException | ParseException e) {
+            loJSON.put("result", "error");
+            loJSON.put("message", e.getMessage());
+        }
+        
+        return loJSON;
+    }
+    
     private void loadConfig() throws IOException{
         Properties props = new Properties();
         props.load(new FileInputStream(System.getProperty("sys.default.path.config") + "/config/maven.properties"));
@@ -459,6 +584,7 @@ public class Bolttech {
                     ", f.sCategrNm" +
                     ", e.sTransNox xTransNox" +
                     ", b.nUnitPrce" +
+                    ", IFNULL(a.sPartnerN, '') sPartnerN" +
                 " FROM CP_SO_Master a" +
                     " LEFT JOIN CP_SO_Insurance e ON a.sTransNox = e.sSourceNo AND e.cTranStat <> '3'" +
                     ", CP_SO_Detail b" +
@@ -478,9 +604,9 @@ public class Bolttech {
                     ", f.sCategrNm PRODUCT_NAME" + 
                     ", TRIM(CONCAT(g.sFrstName, ' ', g.sLastName )) CUST_NAME" + 
                     ", '' CUST_ID" + 
-                    ", CONCAT('63', RIGHT(g.sMobileNo, 10)) CUST_MOBILE_NO" + 
+                    ", IF(IFNULL(g.sMobileNo, '') = '', '', CONCAT('63', RIGHT(g.sMobileNo, 10))) CUST_MOBILE_NO" + 
                     ", g.sEmailAdd CUST_EMAIL" + 
-                    ", TRIM(CONCAT(g.sAddressx, ' ', j.sTownName, ', ', h.sProvName)) CUST_ADDRESS" + 
+                    ", REPLACE(REPLACE(TRIM(CONCAT(g.sAddressx, ' ', j.sTownName, ', ', h.sProvName)), '\\r', ''), '\\n', '') CUST_ADDRESS" + 
                     ", '' CUST_CITY" + 
                     ", d.sBranchCd STORE_CODE" + 
                     ", d.sBranchNm STORE_NAME" + 
@@ -488,7 +614,7 @@ public class Bolttech {
                     ", i.sTownName STORE_CITY" + 
                     ", a.sSalesman SALES_REP_ID" + 
                     ", IFNULL(TRIM(CONCAT(k.sFrstName, ' ', k.sLastName)), '') SALES_REP_NAME" + 
-                    ", c.nPurchase DEVICE_RRP" + 
+                    ", ROUND(b.nUnitPrce - (b.nUnitPrce * (b.nDiscRate/ 100)) - b.nDiscAmtx, 2) DEVICE_RRP" + 
                     ", e.sCategrNm DEVICE_TYPE" + 
                     ", l.sBrandNme DEVICE_MAKE" + 
                     ", m.sModelNme DEVICE_MODEL" + 
@@ -497,7 +623,7 @@ public class Bolttech {
                     ", e.sCategrNm NAME_GOODS_TYPE" + 
                     ", '' DTIME_START" + 
                     ", '' DTIME_END" + 
-                    ", c.nPurchase DEVICE_VALUE_SUM_COVERED" + 
+                    ", ROUND(b.nUnitPrce - (b.nUnitPrce * (b.nDiscRate/ 100)) - b.nDiscAmtx, 2) DEVICE_VALUE_SUM_COVERED" + 
                     ", '' CREATION_DATE" + 
                     ", o.sSerialNo SERIALNO" + 
                     ", 'PHGUANZRETNA01' PARTNER_ID" + 
@@ -506,7 +632,7 @@ public class Bolttech {
                     ", c.sBrandIDx BRAND_ID" +
                     ", c.sCategID2 CATEG_ID" +
                     ", c.sCategID4 CATEG_ID4" +
-                    ", b.nUnitPrce PRODUCT_AMOUNT" +
+                    ", ROUND(b.nUnitPrce - (b.nUnitPrce * (b.nDiscRate/ 100)) - b.nDiscAmtx, 2) PRODUCT_AMOUNT" +
                 " FROM CP_SO_Master a" + 
                         " LEFT JOIN Client_Master g ON a.sClientID = g.sClientID" + 
                         " LEFT JOIN TownCity j ON g.sTownIDxx = j.sTownIDxx" + 

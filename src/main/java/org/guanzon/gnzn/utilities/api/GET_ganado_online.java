@@ -1,3 +1,4 @@
+
 package org.guanzon.gnzn.utilities.api;
 
 import java.io.FileInputStream;
@@ -5,7 +6,6 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 import org.guanzon.appdriver.base.CommonUtils;
 import org.guanzon.appdriver.base.GRider;
@@ -199,7 +199,5 @@ public class GET_ganado_online {
             ex.printStackTrace();
             System.exit(1);
         }
-    }
-    
-    
+    }    
 }

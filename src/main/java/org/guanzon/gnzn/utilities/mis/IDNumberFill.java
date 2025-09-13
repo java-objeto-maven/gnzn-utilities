@@ -9,6 +9,11 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.*;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import org.guanzon.appdriver.base.SQLUtil;
+import org.guanzon.appdriver.base.StringHelper;
+import org.guanzon.appdriver.base.StringHelperMisc;
 
 public class IDNumberFill {
     public static void main (String [] args){
@@ -50,43 +55,68 @@ public class IDNumberFill {
 
                 Sheet sheet = workbook.getSheetAt(0);
 
-                // ✅ Add a new column "Status"
                 Row headerRow = sheet.getRow(0);
-                int newColIndex = headerRow.getLastCellNum();
-                headerRow.createCell(newColIndex).setCellValue("Status");
 
-                // ✅ Find "Score" column index
-                int scoreColIndex = -1;
+                int employeeId = -1;
                 for (int i = 0; i < headerRow.getLastCellNum(); i++) {
-                    if ("Score".equalsIgnoreCase(headerRow.getCell(i).getStringCellValue())) {
-                        scoreColIndex = i;
+                    if ("UID".equalsIgnoreCase(headerRow.getCell(i).getStringCellValue())) {
+                        employeeId = i;
+                        break;
+                    }
+                }
+                
+                int systemName = -1;
+                for (int i = 0; i < headerRow.getLastCellNum(); i++) {
+                    if ("NAME ON SYSTEM".equalsIgnoreCase(headerRow.getCell(i).getStringCellValue())) {
+                        systemName = i;
+                        break;
+                    }
+                }
+                
+                int employeeName = -1;
+                for (int i = 0; i < headerRow.getLastCellNum(); i++) {
+                    if ("FULLNAME".equalsIgnoreCase(headerRow.getCell(i).getStringCellValue())) {
+                        employeeName = i;
+                        break;
+                    }
+                }
+                
+                int idNumber = -1;
+                for (int i = 0; i < headerRow.getLastCellNum(); i++) {
+                    if ("ID NUMBER".equalsIgnoreCase(headerRow.getCell(i).getStringCellValue())) {
+                        idNumber = i;
                         break;
                     }
                 }
 
-               if (scoreColIndex == -1) {
-                   System.out.println("⚠ 'Score' column not found!");
-               } else {
-                   // ✅ Loop through rows, update "Score", and set "Status"
-                   for (int i = 1; i <= sheet.getLastRowNum(); i++) {
-                       Row row = sheet.getRow(i);
-                       if (row == null) continue;
+                if (employeeId == -1) {
+                    System.out.println("⚠ 'UID' column not found!");
+                } else {
+                    for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                        Row row = sheet.getRow(i);
+                        if (row == null) continue;
+                        
+                        Cell name = row.getCell(employeeName);
 
-                       // Update existing "Score" column (+5 points)
-                       Cell scoreCell = row.getCell(scoreColIndex);
-                       if (scoreCell != null && scoreCell.getCellType() == CellType.NUMERIC) {
-                           double score = scoreCell.getNumericCellValue();
-                           scoreCell.setCellValue(score + 5); // update value
-                       }
-
-                       // Add new "Status" column
-                       Cell statusCell = row.createCell(newColIndex);
-                       if (scoreCell != null && scoreCell.getCellType() == CellType.NUMERIC) {
-                           double updatedScore = scoreCell.getNumericCellValue();
-                           statusCell.setCellValue(updatedScore >= 75 ? "Pass" : "Fail");
-                       } else {
-                           statusCell.setCellValue("N/A");
-                       }
+                        String sql = "SELECT a.sEmployID, b.sCompnyNm, a.`cEmpTypex`, IFNULL(a.dRegularx, a.dHiredxxx) dHiredxxx" +
+                                        " FROM Employee_Master001 a" +
+                                            ", Client_Master b" +
+                                        " WHERE a.sEmployID = b.sClientID" +
+                                            " AND b.sCompnyNm LIKE " + SQLUtil.toSQL(name.getStringCellValue() + "%") +
+                                        " ORDER BY dHiredxxx"; 
+                       
+                        ResultSet rs = instance.executeQuery(sql);
+                       
+                        if (rs.next()){
+                            Cell uid = row.getCell(employeeId);
+                            uid.setCellValue(rs.getString("sEmployID"));
+                            
+                            Cell sysName = row.getCell(systemName);
+                            sysName.setCellValue(rs.getString("sCompnyNm"));
+                            
+                            Cell idno = row.getCell(idNumber);
+                            idno.setCellValue(generateEmployeeID(instance, rs.getString("dHiredxxx")));
+                        }
                    }
                }
 
@@ -105,6 +135,20 @@ public class IDNumberFill {
             e.printStackTrace();
             System.exit(1);
         }
+    }
+    
+    private static String generateEmployeeID(GRider instance, String started) throws SQLException{
+        String sql = "SELECT RIGHT(sProbIDNo, 4) sIDNumber FROM Employee_Master001 WHERE sProbIDNo IS NOT NULL LIMIT 1";
+        ResultSet rs = instance.executeQuery(sql);
+        
+        if (!rs.next()){
+            sql = "25-" + started.substring(0, 4) + "-0001";
+        } else {
+            int val = Integer.parseInt(rs.getString("sIDNumber")) + 1;
+            sql = "25-" + started.substring(0, 4) + "-" + StringHelper.prepad(String.valueOf(val), 4, '0');
+        }
+        
+        return sql;
     }
     
     private static void processExcel(File file) {

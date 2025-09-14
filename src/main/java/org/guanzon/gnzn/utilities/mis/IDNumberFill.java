@@ -13,7 +13,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.base.StringHelper;
-import org.guanzon.appdriver.base.StringHelperMisc;
 
 public class IDNumberFill {
     public static void main (String [] args){
@@ -92,18 +91,23 @@ public class IDNumberFill {
                 if (employeeId == -1) {
                     System.out.println("⚠ 'UID' column not found!");
                 } else {
+                    instance.beginTrans();
                     for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                         Row row = sheet.getRow(i);
                         if (row == null) continue;
                         
                         Cell name = row.getCell(employeeName);
 
-                        String sql = "SELECT a.sEmployID, b.sCompnyNm, a.`cEmpTypex`, IFNULL(a.dRegularx, a.dHiredxxx) dHiredxxx" +
-                                        " FROM Employee_Master001 a" +
-                                            ", Client_Master b" +
-                                        " WHERE a.sEmployID = b.sClientID" +
-                                            " AND b.sCompnyNm LIKE " + SQLUtil.toSQL(name.getStringCellValue() + "%") +
-                                        " ORDER BY dHiredxxx"; 
+                        String sql = "SELECT" +
+                                        "  a.sEmployID" +
+                                        ", b.sCompnyNm" +
+                                        ", a.cEmpTypex" +
+                                        ", IFNULL(IFNULL(a.dStartEmp, a.dHiredxxx), a.dRegularx) dHiredxxx" +
+                                        ", IFNULL(a.sIDNumber, '') sIDNumber" +
+                                    " FROM Employee_Master001 a" +
+                                        ", Client_Master b" +
+                                    " WHERE a.sEmployID = b.sClientID" +
+                                        " AND b.sCompnyNm LIKE " + SQLUtil.toSQL(name.getStringCellValue() + "%"); 
                        
                         ResultSet rs = instance.executeQuery(sql);
                        
@@ -115,9 +119,28 @@ public class IDNumberFill {
                             sysName.setCellValue(rs.getString("sCompnyNm"));
                             
                             Cell idno = row.getCell(idNumber);
-                            idno.setCellValue(generateEmployeeID(instance, rs.getString("dHiredxxx")));
+                            
+                            if (rs.getString("sIDNumber").isEmpty()){
+                                sql = generateEmployeeID(instance, rs.getString("dHiredxxx"));
+                                
+                                idno.setCellValue(sql);
+                                
+                                sql = "UPDATE Employee_Master001 SET sIDNumber = " + SQLUtil.toSQL(sql) +
+                                        " WHERE sEmployID = " + SQLUtil.toSQL(rs.getString("sEmployID"));
+                                
+                                if (instance.executeQuery(sql, "Employee_Master001", instance.getBranchCode(), "") <= 0){
+                                    instance.rollbackTrans();
+                                    System.err.println("Unable to update ID Number...");
+                                    System.exit(1);
+                                }
+                                
+                            } else {
+                                idno.setCellValue(rs.getString("sIDNumber"));
+                            }
                         }
                    }
+                    
+                    instance.commitTrans();
                }
 
                // ✅ Save as a new file instead of overwriting
@@ -128,6 +151,8 @@ public class IDNumberFill {
                }
 
                System.out.println("Excel file saved as: " + outputPath);
+               
+               System.exit(0);
            } catch (Exception e) {
                e.printStackTrace();
            }
@@ -138,15 +163,26 @@ public class IDNumberFill {
     }
     
     private static String generateEmployeeID(GRider instance, String started) throws SQLException{
-        String sql = "SELECT RIGHT(sProbIDNo, 4) sIDNumber FROM Employee_Master001 WHERE sProbIDNo IS NOT NULL LIMIT 1";
+        String year = SQLUtil.dateFormat(instance.getServerDate(), "yyyy").substring(2);
+        
+        String sql = "SELECT RIGHT(sIDNumber, 5) sIDNumber" +
+                        " FROM Employee_Master001" +
+                        " WHERE sIDNumber LIKE " + SQLUtil.toSQL(year + "%") +
+                            " AND sIDNumber IS NOT NULL" +
+                        " ORDER BY RIGHT(sIDNumber, 4) DESC" +
+                        " LIMIT 1";
         ResultSet rs = instance.executeQuery(sql);
         
+        int val;
+        
         if (!rs.next()){
-            sql = "25-" + started.substring(0, 4) + "-0001";
+            val = 1;
         } else {
-            int val = Integer.parseInt(rs.getString("sIDNumber")) + 1;
-            sql = "25-" + started.substring(0, 4) + "-" + StringHelper.prepad(String.valueOf(val), 4, '0');
+            val = Integer.parseInt(rs.getString("sIDNumber")) + 1;
         }
+         
+        sql = year + "-" + started.substring(1, 4) + "-";
+        sql += StringHelper.prepad(String.valueOf(val), 5, '0');
         
         return sql;
     }

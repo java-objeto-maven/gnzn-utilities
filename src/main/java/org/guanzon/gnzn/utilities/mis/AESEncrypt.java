@@ -12,7 +12,7 @@ public class AESEncrypt {
         return md.digest(key.getBytes(StandardCharsets.UTF_8)); // 32 bytes
     }
 
-    public static String encryptBase64(String plaintext, String key) throws Exception {
+    private static String encryptBase64(String plaintext, String key) throws Exception {
         byte[] aesKey = sha256Bytes(key);
         SecretKeySpec keySpec = new SecretKeySpec(aesKey, "AES");
 
@@ -23,7 +23,7 @@ public class AESEncrypt {
         return Base64.getEncoder().encodeToString(encrypted);
     }
 
-    public static String decryptBase64(String base64Cipher, String key) throws Exception {
+    private static String decryptBase64(String base64Cipher, String key) throws Exception {
         byte[] aesKey = sha256Bytes(key);
         SecretKeySpec keySpec = new SecretKeySpec(aesKey, "AES");
 
@@ -38,7 +38,7 @@ public class AESEncrypt {
     // quick test
     public static void main(String[] args) throws Exception {
         String key = "empid";
-        String plain = "ctrl=25-2025-0001";
+        String plain = "C00109001231";
         String enc = encryptBase64(plain, key);
         System.out.println("Encrypted (base64): " + enc);
         System.out.println("Decrypted: " + decryptBase64(enc, key));

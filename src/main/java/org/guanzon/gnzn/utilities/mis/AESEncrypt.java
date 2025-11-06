@@ -39,8 +39,11 @@ public class AESEncrypt {
     public static void main(String[] args) throws Exception {
         String key = "empid";
         String plain = "C00109001231";
-        String enc = encryptBase64(plain, key);
-        System.out.println("Encrypted (base64): " + enc);
-        System.out.println("Decrypted: " + decryptBase64(enc, key));
+//        String enc = encryptBase64(plain, key);
+//        System.out.println("Encrypted (base64): " + enc);
+//        System.out.println("Decrypted: " + decryptBase64(enc, key));
+        
+        plain = "IdEBrD+xc+OpkEGkH8DSaQ==";
+        System.out.println("Decrypted: " + decryptBase64(plain, key));
     }
 }

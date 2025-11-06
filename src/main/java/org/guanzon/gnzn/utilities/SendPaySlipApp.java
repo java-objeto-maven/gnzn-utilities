@@ -65,7 +65,7 @@ public class SendPaySlipApp {
                     if(!rsToSend.getString("sProdctID").isEmpty()){
                         String message;
                         message = "Good day! \n\n Attached is your payslip for the payroll period " + rsToSend.getString("dPeriodFr") + " - " + rsToSend.getString("dPeriodTo");
-                        message += ".\n\n [http://gts1.guanzongroup.com.ph:2007/repl/misc/download_ps.php?period="+ toBase64(rsToSend.getString("sPayPerID")) + "&client=" + toBase64(rsToSend.getString("sEmployID")) + "]";
+                        message += ".\n\n [http://repl.guanzongroup.com.ph:2007/repl/misc/download_ps.php?period="+ toBase64(rsToSend.getString("sPayPerID")) + "&client=" + toBase64(rsToSend.getString("sEmployID")) + "]";
                         if (sendNotification( 
                             rsToSend.getString("sProdctID"), 
                             rsToSend.getString("sUserIDxx"), 

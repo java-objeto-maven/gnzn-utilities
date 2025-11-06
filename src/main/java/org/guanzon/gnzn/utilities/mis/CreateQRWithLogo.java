@@ -9,9 +9,11 @@ public class CreateQRWithLogo {
         String invitation = "https://apps.guanzongroup.com.ph/apk/video.mp4";
         String gcircle = "https://apps.guanzongroup.com.ph/apk/gCircle.apk";
         
+        String ssdd = "https://restgk.guanzongroup.com.ph/uploads/ssdd-checklist.pdf";
+        
         // ✅ Example with styled label
         generateQR(
-                attire,
+                ssdd,
                 "d:/GGC_Java_Systems/images/logo 2.png",
                 "d:/qr_with_label.png",
                 600,
@@ -23,7 +25,7 @@ public class CreateQRWithLogo {
                 Color.WHITE,            // logo background
                 Color.BLACK, 6f,        // logo border
                 0.15f, 0.25f,           // logo margin, logo border radius
-                new String[]{"Scan Me", "Exclusive Content"}, // label lines
+                new String[]{"", ""}, // label lines
                 "SansSerif", 26f, true, Color.WHITE, // font settings
                 40f, 10f                // ✅ label marginTop, lineSpacing
         );

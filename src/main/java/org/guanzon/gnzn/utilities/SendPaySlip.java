@@ -183,59 +183,35 @@ public class SendPaySlip {
     
     private static ResultSet extract2send(String sender){
         ResultSet rs = null;
-        try {  
-//            String lsSQL = "SELECT a.sBranchCD, a.sPayPerID, a.sEmployID, IFNULL(b.sEmailAdd, '') sEmailAdd, c.dPeriodFr, c.dPeriodTo, CONCAT(b.sLastName, ', ', b.sFrstname) sEmployNm" +
-//                                ", IFNULL(e.sEmailAdd, '') sBranchMl" +
-//                                ", IFNULL(d.sEmailAdd, '') sDeptMail" +
-//                                ", IFNULL(i.sEmpLevID, '0') sEmpLevID" +
-//                                ", f.cDivision" +
-//                                ", a.sDeptIDxx" +
-//                                ", i.sBranchCD" +
-//                                ", e.cMainOffc" +
-//                            " FROM Payroll_Summary_New a" +
-//                                " LEFT JOIN Client_Master b ON a.sEmployID = b.sClientID" +
-//                                " LEFT JOIN Payroll_Period c ON a.sPayPerID = c.sPayPerID" +
-//                                " LEFT JOIN Employee_Master001 i ON a.sEmployID = i.sEmployID" + 
-//                                " LEFT JOIN Department d ON i.sDeptIDxx = d.sDeptIDxx" + 
-//                                " LEFT JOIN Branch e ON i.sBranchCD = e.sBranchCD" + 
-//                                " LEFT JOIN Branch_Others f ON i.sBranchCD = f.sBranchCD" + 
-//                            " WHERE a.cMailSent = '1'" +       
-//                                " AND a.sBranchCd NOT IN (SELECT sBranchCd FROM Branch WHERE IFNULL(sEmailAdd, '') = '')" +
-//                            " ORDER BY e.sEmailAdd DESC" + 
-//                            (sender.compareToIgnoreCase("ymail") == 0 ? " LIMIT 150" : " LIMIT 350");
-            String lsSQL = "SELECT a.sBranchCD, a.sPayPerID, a.sEmployID, IFNULL(b.sEmailAdd, '') sEmailAdd, c.dPeriodFr, c.dPeriodTo, CONCAT(b.sLastName, ', ', b.sFrstname) sEmployNm" +
-                                ", IFNULL(e.sEmailAdd, '') sBranchMl" +
-                                ", IFNULL(d.sEmailAdd, '') sDeptMail" +
-                                ", IFNULL(i.sEmpLevID, '0') sEmpLevID" +
-                                ", f.cDivision" +
-                                ", a.sDeptIDxx" +
-                                ", i.sBranchCD" +
-                                ", e.cMainOffc" +
-                                ", i.cRecdStat" +
-                                ", i.cSalTypex" +
-                            " FROM Payroll_Summary_New a" +
-                                " LEFT JOIN Client_Master b ON a.sEmployID = b.sClientID" +
-                                " LEFT JOIN Payroll_Period c ON a.sPayPerID = c.sPayPerID" +
-                                " LEFT JOIN Employee_Master001 i ON a.sEmployID = i.sEmployID" + 
-                                " LEFT JOIN Department d ON i.sDeptIDxx = d.sDeptIDxx" + 
-                                " LEFT JOIN Branch e ON i.sBranchCD = e.sBranchCD" + 
-                                " LEFT JOIN Branch_Others f ON i.sBranchCD = f.sBranchCD" + 
-                            " WHERE a.cMailSent = '1'" +       
-                                " AND IFNULL(b.sEmailAdd, '') <> ''" +
-                            " HAVING i.cRecdStat = '1' AND i.cSalTypex <> 'S'" +
-                            " ORDER BY e.sEmailAdd DESC" + 
-                            (sender.compareToIgnoreCase("guanzon") == 0 ? " LIMIT 150" : " LIMIT 350");
-            
-            if (!System.getProperty("sEmployID").isEmpty()){
-                lsSQL = MiscUtil.addCondition(lsSQL, "a.sEmployID = " + SQLUtil.toSQL(System.getProperty("sEmployID")));
-            }
+        String lsSQL = "SELECT a.sBranchCD, a.sPayPerID, a.sEmployID, IFNULL(b.sEmailAdd, '') sEmailAdd, c.dPeriodFr, c.dPeriodTo, CONCAT(b.sLastName, ', ', b.sFrstname) sEmployNm" +
+                            ", IFNULL(e.sEmailAdd, '') sBranchMl" +
+                            ", IFNULL(d.sEmailAdd, '') sDeptMail" +
+                            ", IFNULL(i.sEmpLevID, '0') sEmpLevID" +
+                            ", f.cDivision" +
+                            ", a.sDeptIDxx" +
+                            ", i.sBranchCD" +
+                            ", e.cMainOffc" +
+                            ", i.cRecdStat" +
+                            ", i.cSalTypex" +
+                        " FROM Payroll_Summary_New a" +
+                            " LEFT JOIN Client_Master b ON a.sEmployID = b.sClientID" +
+                            " LEFT JOIN Payroll_Period c ON a.sPayPerID = c.sPayPerID" +
+                            " LEFT JOIN Employee_Master001 i ON a.sEmployID = i.sEmployID" + 
+                            " LEFT JOIN Department d ON i.sDeptIDxx = d.sDeptIDxx" + 
+                            " LEFT JOIN Branch e ON i.sBranchCD = e.sBranchCD" + 
+                            " LEFT JOIN Branch_Others f ON i.sBranchCD = f.sBranchCD" + 
+                        " WHERE a.cMailSent = '1'" +       
+                            " AND IFNULL(b.sEmailAdd, '') <> ''" +
+                        " HAVING i.cRecdStat = '1' AND i.cSalTypex <> 'S'" +
+                        " ORDER BY e.sEmailAdd DESC" + 
+                        (sender.compareToIgnoreCase("guanzon") == 0 ? " LIMIT 150" : " LIMIT 350");
 
-            System.out.println(lsSQL);
-            rs = instance.getConnection().createStatement().executeQuery(lsSQL);
-        } catch (SQLException ex) {
-            logwrapr.severe("extract2send: SQLException error detected.", ex);
-            System.exit(1);
+        if (!System.getProperty("sEmployID").isEmpty()){
+            lsSQL = MiscUtil.addCondition(lsSQL, "a.sEmployID = " + SQLUtil.toSQL(System.getProperty("sEmployID")));
         }
+
+        System.out.println(lsSQL);
+        rs = instance.executeQuery(lsSQL);
         
         return rs;
    }  

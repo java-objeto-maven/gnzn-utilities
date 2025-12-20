@@ -96,50 +96,46 @@ public class SendPaySlipApp {
     
     private static ResultSet extract2send(){
         ResultSet rs = null;
-        try {  
-            String lsSQL = "SELECT" +
-                                "  a.sBranchCD" +
-                                ", a.sPayPerID" +
-                                ", a.sEmployID" +
-                                ", IFNULL(b.sEmailAdd, '') sEmailAdd" +
-                                ", c.dPeriodFr" +
-                                ", c.dPeriodTo" +
-                                ", CONCAT(b.sLastName, ', ', b.sFrstname) sEmployNm" +
-                                ", IFNULL(g.sUserIDxx, '') sUserIDxx" +
-                                ", IFNULL(j.sProdctID, '') sProdctID" +
-                                ", IFNULL(e.sEmailAdd, '') sBranchMl" + 
-                                ", IFNULL(d.sEmailAdd, '') sDeptMail" + 
-                                ", IFNULL(i.sEmpLevID, '0') sEmpLevID" + 
-                                ", f.cDivision" + 
-                                ", a.sDeptIDxx" + 
-                                ", i.sBranchCD" + 
-                                ", e.cMainOffc" +
-                                ", g.sAppVersn" + 
-                            " FROM Payroll_Summary_New a" + 
-                                " LEFT JOIN Client_Master b ON a.sEmployID = b.sClientID" + 
-                                " LEFT JOIN Payroll_Period c ON a.sPayPerID = c.sPayPerID" + 
-                                " LEFT JOIN App_User_Master j" + 
-                                    " LEFT JOIN App_User_Device g" + 
-                                    " ON j.sUserIDxx = g.sUserIDxx" +
-                                        " AND g.sAppVersn >= 79" +
-                                " ON a.sEmployID = j.sEmployNo" + 
-                                    " AND j.cActivatd = '1'" + 
-                                    " AND j.sProdctID = 'gRider'" + 
-                                " LEFT JOIN Employee_Master001 i ON a.sEmployID = i.sEmployID" +  
-                                " LEFT JOIN Department d ON i.sDeptIDxx = d.sDeptIDxx" +  
-                                " LEFT JOIN Branch e ON i.sBranchCD = e.sBranchCD" +  
-                                " LEFT JOIN Branch_Others f ON i.sBranchCD = f.sBranchCD" +  
-                            " WHERE a.cMailSent = '1'" + 
-                            " GROUP BY sPayPerID, sUserIDxx" +                  
-                            " HAVING sUserIDxx <> ''" +
-                            " ORDER BY a.sPayPerID ASC, e.sEmailAdd DESC";
-            //" AND a.sPayPerID IN ('A0012425', 'A0012426', 'M0012437', 'M0012438', 'A0012427', 'A0012428', 'M0012440', 'M0012441')" +
+        
+        String lsSQL = "SELECT" +
+                            "  a.sBranchCD" +
+                            ", a.sPayPerID" +
+                            ", a.sEmployID" +
+                            ", IFNULL(b.sEmailAdd, '') sEmailAdd" +
+                            ", c.dPeriodFr" +
+                            ", c.dPeriodTo" +
+                            ", CONCAT(b.sLastName, ', ', b.sFrstname) sEmployNm" +
+                            ", IFNULL(g.sUserIDxx, '') sUserIDxx" +
+                            ", IFNULL(j.sProdctID, '') sProdctID" +
+                            ", IFNULL(e.sEmailAdd, '') sBranchMl" + 
+                            ", IFNULL(d.sEmailAdd, '') sDeptMail" + 
+                            ", IFNULL(i.sEmpLevID, '0') sEmpLevID" + 
+                            ", f.cDivision" + 
+                            ", a.sDeptIDxx" + 
+                            ", i.sBranchCD" + 
+                            ", e.cMainOffc" +
+                            ", g.sAppVersn" + 
+                        " FROM Payroll_Summary_New a" + 
+                            " LEFT JOIN Client_Master b ON a.sEmployID = b.sClientID" + 
+                            " LEFT JOIN Payroll_Period c ON a.sPayPerID = c.sPayPerID" + 
+                            " LEFT JOIN App_User_Master j" + 
+                                " LEFT JOIN App_User_Device g" + 
+                                " ON j.sUserIDxx = g.sUserIDxx" +
+                                    " AND g.sAppVersn >= 79" +
+                            " ON a.sEmployID = j.sEmployNo" + 
+                                " AND j.cActivatd = '1'" + 
+                                " AND j.sProdctID = 'gRider'" + 
+                            " LEFT JOIN Employee_Master001 i ON a.sEmployID = i.sEmployID" +  
+                            " LEFT JOIN Department d ON i.sDeptIDxx = d.sDeptIDxx" +  
+                            " LEFT JOIN Branch e ON i.sBranchCD = e.sBranchCD" +  
+                            " LEFT JOIN Branch_Others f ON i.sBranchCD = f.sBranchCD" +  
+                        " WHERE a.cMailSent = '1'" + 
+                        " GROUP BY sPayPerID, sUserIDxx" +                  
+                        " HAVING sUserIDxx <> ''" +
+                        " ORDER BY a.sPayPerID ASC, e.sEmailAdd DESC";
+        //" AND a.sPayPerID IN ('A0012425', 'A0012426', 'M0012437', 'M0012438', 'A0012427', 'A0012428', 'M0012440', 'M0012441')" +
 
-            rs = instance.getConnection().createStatement().executeQuery(lsSQL);
-        } catch (SQLException ex) {
-            logwrapr.severe("extract2send: SQLException error detected.", ex);
-            System.exit(1);
-        }
+        rs = instance.executeQuery(lsSQL);
         
         return rs;
     }  

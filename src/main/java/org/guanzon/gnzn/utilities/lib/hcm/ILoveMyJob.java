@@ -37,14 +37,14 @@ public class ILoveMyJob {
                 return new MPSales();
             case MP_SALES_ACC:
                 return new MPSalesAcc();
-            case RAFFLE_DATE:
-                return new PanaloRaffle();
-            case RAFFLE_WINNER:
-                return new PanaloWinners();
-            case RAFFLE_START:
-                return new RaffleNotificationStart();
-            case RAFFLE_END:
-                return new RaffleNotificationEnd();
+//            case RAFFLE_DATE:
+//                return new PanaloRaffle();
+//            case RAFFLE_WINNER:
+//                return new PanaloWinners();
+//            case RAFFLE_START:
+//                return new RaffleNotificationStart();
+//            case RAFFLE_END:
+//                return new RaffleNotificationEnd();
             default:
                 return null;
         }

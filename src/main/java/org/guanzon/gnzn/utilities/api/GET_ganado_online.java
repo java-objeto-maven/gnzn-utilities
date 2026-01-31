@@ -57,25 +57,27 @@ public class GET_ganado_online {
                 if (CommonUtils.isDate(param, SQLUtil.FORMAT_TIMESTAMP)){
                     json.put("sTransNox", "");
                     json.put("dTimeStmp", param);
+                    System.out.println("Timestamp as parameter.");
                 } else {
                     json.put("sTransNox", param);
                     json.put("dTimeStmp", "");
+                    System.out.println("Transaction number as parameter.");
                 }
             } else {
-                sql = "SELECT dTimeStmp FROM Ganado_Online ORDER BY dTimeStmp DESC LIMIT 1";
+                sql = "SELECT dTransact FROM Ganado_Online ORDER BY dTransact DESC LIMIT 1";
                 ors = instance.executeQuery(sql);
-
-                json.put("sTransNox", "");
-                json.put("dTimeStmp", "1900-01-01 00:00:01");
+                
+                json.put("dTransact", "1900-01-01 00:00:01");
                 
                 if (ors.next()){
-                    json.put("dTimeStmp", ors.getString("dTimeStmp"));
+                    json.put("dTransact", ors.getString("dTransact"));
                 }
+                
+                System.out.println("Transaction date as parameter. " + json.get("dTransact"));
             }
 
-//            Map<String, String> headers = API.getWSHeader("TeleMktg");
-
             JSONObject headers = new JSONObject();
+            System.out.println(System.getProperty("sys.default.path.config") + "/access.token");
             headers.put("g-access-token", API.getAccessToken(System.getProperty("sys.default.path.config") + "/access.token"));
 
             String response;
@@ -191,6 +193,9 @@ public class GET_ganado_online {
                         System.exit(1);
                     }
                 }
+            }else {
+                System.out.println(json.toJSONString());
+                System.exit(1);
             }
             
             System.out.println("Done. Thank you.");

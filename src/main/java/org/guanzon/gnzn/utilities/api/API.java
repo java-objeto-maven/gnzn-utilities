@@ -43,7 +43,7 @@ public class API {
     }
     
     public static String getAccessToken(String access){
-        try {
+        try {            
             JSONParser oParser = new JSONParser();
             JSONObject token = (JSONObject)oParser.parse(new FileReader(access));
 
@@ -62,6 +62,7 @@ public class API {
             
             return (String)token.get("access_key");
         } catch (IOException | ParseException ex) {
+            System.err.println(ex.getMessage());
             return null;
         }
     }

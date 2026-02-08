@@ -1,18 +1,23 @@
 package org.guanzon.gnzn.utilities.lib.css;
 
+import com.sun.org.apache.bcel.internal.generic.LOR;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import org.guanzon.appdriver.base.CommonUtils;
 import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.MiscUtil;
+import org.guanzon.appdriver.base.SQLUtil;
 import org.json.simple.JSONObject;
 
 public class CollectionCallCenterLeads {
-    final int REFILL = 20;
+    final int REFILL = 30;
     
     GRider _instance;
     JSONObject _json;
     
-    String _sql;
     String _period_from;
     String _period_thru;
     
@@ -35,14 +40,28 @@ public class CollectionCallCenterLeads {
                 return _json;
             }
 
-            _sql = getSQ_ForCollection();
+            String lsSQL = getSQ_ForCollection();
 
-            ResultSet loForColl = _instance.executeQuery(_sql);
+            ResultSet loRS = _instance.executeQuery(lsSQL);
             
-            while(loForColl.next()){
-                //check if this customer already paid
-                //check if this cusomer was already called for the period
-                //add to leads
+            while(loRS.next()){
+                if (ln2Fill > lnFilld){
+                    //check if unpaid
+                    if (!isPaid(loRS.getString("sAcctNmbr"))){
+                        //check if already added to leads
+                        if (!isLRCallEncoded(loRS.getString("sAcctNmbr"))){
+                            //add to leads
+                            if (!addToLeads(loRS.getString("sAcctNmbr"), loRS.getString("sBranchCd"))){
+                                _json.put("result", "error");
+                                _json.put("message", "Unable to add account to leads.");
+                                return _json;
+                            }
+                            
+                            System.out.println(loRS.getString("sAcctNmbr") + " added to leads.");
+                            lnFilld++;
+                        }
+                    }
+                }
             }
         }
         
@@ -50,14 +69,134 @@ public class CollectionCallCenterLeads {
         return _json;
     }
     
-    public boolean checkPeriod(){
-        _period_from = "";
-        _period_thru = "";
+    private boolean checkPeriod() throws SQLException{
+        Calendar cal = Calendar.getInstance();
+
+        // Date From: 3rd day of current month
+        cal.set(Calendar.DAY_OF_MONTH, 3);
+        Date dateFrom = cal.getTime();
+
+        // Date Thru: 2nd day of next month
+        cal.add(Calendar.MONTH, 1); // move to next month
+        cal.set(Calendar.DAY_OF_MONTH, 2);
+        Date dateThru = cal.getTime();
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        _period_from = sdf.format(dateFrom);
+        _period_thru = sdf.format(dateThru);
+
+        String lsSQL = "SELECT" + 
+                            "  STR_TO_DATE(sCollFrom, '%Y%m%d') sCollFrom" +
+                            ", STR_TO_DATE(sCollThru, '%Y%m%d') sCollThru" +
+                        " FROM Collection_Period" +
+                        " WHERE cRecdStat = '1'" +
+                        " ORDER BY sPeriodID" + 
+                        " DESC LIMIT 1";
+        
+        ResultSet loRS = _instance.executeQuery(lsSQL);
+        
+        if (loRS.next()){
+            //collection thru is now less than the current date
+            if (SQLUtil.toDate(loRS.getString("sCollThru"), SQLUtil.FORMAT_SHORT_DATE).before(Calendar.getInstance().getTime())){
+                //create new period
+                lsSQL = "INSERT INTO Collection_Period SET" +
+                        "  sPeriodID = " + SQLUtil.toSQL(_period_from.replace("-", "")).substring(0, 6) + //202602
+                        ", sCollFrom = " + SQLUtil.toSQL(_period_from.replace("-", "")) +
+                        ", sCollThru = " + SQLUtil.toSQL(_period_thru.replace("-", "")) +
+                        ", cRecdStat = '1'" +
+                        ", sModified = " + SQLUtil.toSQL(_instance.getUserID()) +
+                        ", dModified = " + SQLUtil.toSQL(_instance.getServerDate());
+                
+                System.out.println(lsSQL);
+                if (_instance.executeQuery(lsSQL, "Collection_Period", _instance.getBranchCode(), "") <= 0){
+                    System.err.println("Unable to create new collection period.");
+                    return false;
+                }
+            } else {
+                _period_from = loRS.getString("sCollFrom");
+                _period_thru = loRS.getString("sCollThru");
+            }
+            
+            return true;   
+        }
+        
+        return false;
+    }
+    
+    public boolean addToLeads(String accountNo, String branchCode){
+        _instance.beginTrans();
+        
+        //remove for collection unit
+        String lsSQL = "DELETE FROM LR_Collection_Unit WHERE sAcctNmbr = " + SQLUtil.toSQL(accountNo);
+        _instance.executeUpdate(lsSQL);
+        
+        //add new for collection unit
+        lsSQL = "INSERT INTO LR_Collection_Unit SET" +
+                                "  sAcctNmbr = " + SQLUtil.toSQL(accountNo) +
+                                ", sBranchCd = " + SQLUtil.toSQL(branchCode) +
+                                ", dTransact = " + SQLUtil.toSQL(_instance.getServerDate()) +
+                                ", cCollUnit = '0'" +
+                                ", sInCharge = " + SQLUtil.toSQL("") +
+                                ", cApntUnit = " + SQLUtil.toSQL("") +
+                                ", dDueUntil = " + SQLUtil.toSQL(CommonUtils.dateAdd(_instance.getServerDate(), 5)) +
+                                ", cCollStat = '0'" +
+                                ", nPriority = 1" + 
+                                ", nNoSchedx = 0" +
+                                ", sModified = " + SQLUtil.toSQL(_instance.getUserID()) +
+                                ", dModified = " + SQLUtil.toSQL(_instance.getServerDate());
+        
+        if (_instance.executeUpdate(lsSQL) <= 0){
+            _instance.rollbackTrans();
+            return false;
+        }
+        
+        //add customer to leads
+        lsSQL = "INSERT INTO LR_Calls_Master SET" +
+                "  sTransNox = " + SQLUtil.toSQL(MiscUtil.getNextCode("LR_Calls_Master", "sTransNox", true, _instance.getConnection(), _instance.getBranchCode())) +
+                ", dTransact = " + SQLUtil.toSQL(_instance.getServerDate()) +
+                ", sAcctNmbr = " + SQLUtil.toSQL(accountNo) +
+                ", sRemarksx = ''" +
+                ", cTranStat = '0'" +
+                ", sAsgAgent = ''" +
+                ", sAgentIDx = ''" +
+                ", sModified = " + SQLUtil.toSQL(_instance.getUserID()) +
+                ", dModified = " + SQLUtil.toSQL(_instance.getServerDate());
+
+        if (_instance.executeUpdate(lsSQL) <= 0){
+            _instance.rollbackTrans();
+            return false;
+        }
+
+        //update for collection
+        lsSQL = "UPDATE LR_Collection_Unit SET" +
+                    "  dScheduld = " + SQLUtil.toSQL(_instance.getServerDate()) +
+                    ", sInCharge = ''" +
+                    ", cCollStat = '1'" + 
+                " WHERE sAcctNmbr = " + SQLUtil.toSQL(accountNo) +
+                    " AND cCollUnit = '0'";
+        _instance.executeUpdate(lsSQL);
+        _instance.commitTrans();
+        
         return true;
     }
     
-    public boolean isLRCallEncoded(String accountNo){
-        return false;
+    public boolean isLRCallEncoded(String accountNo) throws SQLException{
+        String lsSQL = "SELECT sTransNox" +
+                        " FROM LR_Calls_Master" +
+                        " WHERE sAcctNmbr = " + SQLUtil.toSQL(accountNo) +
+                            " AND dTransact BETWEEN " + SQLUtil.toSQL(_period_from) + " AND " + SQLUtil.toSQL(_period_thru);
+        
+        ResultSet loRS = _instance.executeQuery(lsSQL);
+        
+        return loRS.next();
+    }
+    
+    public boolean isPaid(String accountNo) throws SQLException{
+        String lsSQL = MiscUtil.addCondition(getSQ_PeriodCollection(), "a.sAcctNmbr = " + SQLUtil.toSQL(accountNo));
+        
+        ResultSet loRS = _instance.executeQuery(lsSQL);
+        
+        return loRS.next();
     }
     
     public int get2Fill(){
@@ -106,7 +245,8 @@ public class CollectionCallCenterLeads {
                     " v.sAreaDesc," +
                     " z.sBranchNm," +
                     " w.sCompnyNm `sCollectx`," +
-                    " h.sEngineNo" + 
+                    " h.sEngineNo," +
+                    " a.sBranchCd" +
                 " FROM" +
                     " MC_AR_Master a" + 
                     " LEFT JOIN MC_Serial h" + 
@@ -117,15 +257,15 @@ public class CollectionCallCenterLeads {
                       " ON a.sClientID = i.sEmployID" + 
                       " AND (" +
                         " ISNULL(i.dFiredxxx)" + 
-                        " OR i.dFiredxxx > '2026-02-03 00:00:00'" +
+                        " OR i.dFiredxxx > '" + _period_from + " 00:00:00'" +
                       " )," +
                     " Client_Master b" + 
-                    " LEFT JOIN Barangay X" +
+                    " LEFT JOIN Barangay x" +
                       " ON b.sBrgyIDxx = x.sBrgyIDxx," +
                     " Route_Area c" + 
                     " LEFT JOIN Branch z" + 
                       " ON c.sBranchCd = z.sBranchCd" + 
-                    " LEFT JOIN Branch_Others Y" +
+                    " LEFT JOIN Branch_Others y" +
                       " ON z.sBranchCd = y.sBranchCd" + 
                     " LEFT JOIN Branch_Area v" + 
                       " ON y.sAreaCode = v.sAreaCode" + 
@@ -142,11 +282,11 @@ public class CollectionCallCenterLeads {
                     " AND d.sProvIDxx = e.sProvIDxx" + 
                     " AND a.nAcctTerm > 0" + 
                     " AND f.sEmployID = c.sManagrID" + 
-                    " AND a.dPurchase < '2026-02-03 00:00:00'" + 
+                    " AND a.dPurchase < '" + _period_from + " 00:00:00'" +
                     " AND (" +
                       " a.cAcctStat = '0'" + 
                       " OR (" +
-                        " a.dClosedxx >= '2026-02-03 00:00:00'" + 
+                        " a.dClosedxx >= '" + _period_from + " 00:00:00'" +
                         " AND a.cAcctStat <> '0'" +
                       " )" +
                     " )" +
@@ -207,7 +347,7 @@ public class CollectionCallCenterLeads {
                       " ON b.sClientID = i.sEmployID" + 
                       " AND (" +
                       "  ISNULL(i.dFiredxxx)" + 
-                      "  OR i.dFiredxxx > '2026-02-01 00:00:00'" +
+                      "  OR i.dFiredxxx > '" + getFirstDay() + " 00:00:00'" +
                       " )," +
                     " Client_Master c," +
                     " Employee_Master001 d," +
@@ -219,8 +359,7 @@ public class CollectionCallCenterLeads {
                     " AND b.sClientID = c.sClientID" + 
                     " AND b.sRouteIDx = e.sRouteIDx" + 
                     " AND d.sEmployID = g.sClientID" + 
-                    " AND a.dTransact BETWEEN '2026-02-01 00:00:00'" + 
-                    " AND '2026-02-07 23:59:59'" + 
+                    " AND a.dTransact BETWEEN '" + getFirstDay() + " 00:00:00' AND " + SQLUtil.toSQL(_instance.getServerDate()) +
                     " AND ISNULL(i.sEmployID)" + 
                     " AND b.cMotorNew = '1'" + 
                     " AND e.sManagrID = d.sEmployID" + 
@@ -228,5 +367,13 @@ public class CollectionCallCenterLeads {
                 " ORDER BY xEmployNm," +
                     " a.dTransact," +
                     " a.sORNoxxxx";
+    }
+    
+    private String getFirstDay(){
+        String lsDate = SQLUtil.dateFormat(_instance.getServerDate(), SQLUtil.FORMAT_SHORT_DATE);
+        
+        lsDate = lsDate.substring(0, 8); //2026-02-08
+        lsDate += "01";
+        return lsDate;
     }
 }

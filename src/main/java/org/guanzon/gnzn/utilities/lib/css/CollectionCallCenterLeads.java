@@ -1,6 +1,5 @@
 package org.guanzon.gnzn.utilities.lib.css;
 
-import com.sun.org.apache.bcel.internal.generic.LOR;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;

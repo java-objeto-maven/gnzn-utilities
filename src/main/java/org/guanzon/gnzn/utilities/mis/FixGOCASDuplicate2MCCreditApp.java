@@ -87,6 +87,15 @@ public class FixGOCASDuplicate2MCCreditApp {
                                     System.err.println("Unable to delete record." + lsSQL);
                                     System.exit(1);
                                 }
+                                
+                                lsSQL = "DELETE FROM MC_Applicant_Means WHERE sTransNox = " + SQLUtil.toSQL(loDuplicate.getString("sTransNox"));
+                                instance.executeQuery(lsSQL, "xxxTableAll", instance.getBranchCode(), "");
+                                
+                                lsSQL = "DELETE FROM MC_Applicant_Reference WHERE sTransNox = " + SQLUtil.toSQL(loDuplicate.getString("sTransNox"));
+                                instance.executeQuery(lsSQL, "xxxTableAll", instance.getBranchCode(), "");
+                                
+                                lsSQL = "DELETE FROM MC_Applicant_Employment WHERE sTransNox = " + SQLUtil.toSQL(loDuplicate.getString("sTransNox"));
+                                instance.executeQuery(lsSQL, "xxxTableAll", instance.getBranchCode(), "");
                             }
                             instance.commitTrans();
                         }
@@ -131,6 +140,16 @@ public class FixGOCASDuplicate2MCCreditApp {
                                 System.err.println("Unable to delete record." + lsSQL);
                                 System.exit(1);
                             }
+                            
+                            lsSQL = "DELETE FROM MC_Applicant_Means WHERE sTransNox = " + SQLUtil.toSQL(loRS.getString("sTransNox"));
+                            instance.executeQuery(lsSQL, "xxxTableAll", instance.getBranchCode(), "");
+
+                            lsSQL = "DELETE FROM MC_Applicant_Reference WHERE sTransNox = " + SQLUtil.toSQL(loRS.getString("sTransNox"));
+                            instance.executeQuery(lsSQL, "xxxTableAll", instance.getBranchCode(), "");
+
+                            lsSQL = "DELETE FROM MC_Applicant_Employment WHERE sTransNox = " + SQLUtil.toSQL(loRS.getString("sTransNox"));
+                            instance.executeQuery(lsSQL, "xxxTableAll", instance.getBranchCode(), "");
+                                
                             instance.commitTrans();
                         }
                     } else { //selected but duplicate
@@ -152,6 +171,16 @@ public class FixGOCASDuplicate2MCCreditApp {
                                 System.err.println("Unable to delete record." + lsSQL);
                                 System.exit(1);
                             }
+                            
+                            lsSQL = "DELETE FROM MC_Applicant_Means WHERE sTransNox = " + SQLUtil.toSQL(loRS.getString("sTransNox"));
+                            instance.executeQuery(lsSQL, "xxxTableAll", instance.getBranchCode(), "");
+
+                            lsSQL = "DELETE FROM MC_Applicant_Reference WHERE sTransNox = " + SQLUtil.toSQL(loRS.getString("sTransNox"));
+                            instance.executeQuery(lsSQL, "xxxTableAll", instance.getBranchCode(), "");
+
+                            lsSQL = "DELETE FROM MC_Applicant_Employment WHERE sTransNox = " + SQLUtil.toSQL(loRS.getString("sTransNox"));
+                            instance.executeQuery(lsSQL, "xxxTableAll", instance.getBranchCode(), "");
+                            
                             instance.commitTrans();
                         }
                     }

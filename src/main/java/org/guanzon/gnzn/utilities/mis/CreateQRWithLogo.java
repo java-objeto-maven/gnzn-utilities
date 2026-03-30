@@ -9,7 +9,7 @@ public class CreateQRWithLogo {
         String invitation = "https://apps.guanzongroup.com.ph/apk/video.mp4";
         String gcircle = "https://apps.guanzongroup.com.ph/apk/gCircle.apk";
         
-        String ssdd = "https://restgk.guanzongroup.com.ph/uploads/personal_medical_records.pdf";
+        String ssdd = "https://restgk.guanzongroup.com.ph/uploads/cctv_footage_requisition_form.pdf";
         
         // ✅ Example with styled label
         generateQR(

@@ -51,7 +51,7 @@ public class GenerateEmployeeIDQR {
                             " FROM Employee_Master001 a" +
                                 ", Client_Master b" +
                             " WHERE a.sEmployID = b.sClientID" +
-                                " AND a.sEmployID IN ('M00118002231', 'M00116002291')" +
+                                " AND a.sEmployID IN ('M00106000333')" +
                                 " AND a.sIDNumber IS NOT NULL" + 
                             " ORDER BY a.sIDNumber";
             

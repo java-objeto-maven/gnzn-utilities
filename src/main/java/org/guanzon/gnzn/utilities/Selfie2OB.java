@@ -92,6 +92,7 @@ public class Selfie2OB {
                                 ", DATE_FORMAT(a.dLogTimex, '%Y-%m-%d') dTransact" +
                                 ", a.sTransNox" +
                                 ", d.sCompnyNm" +
+                                ", c.sBranchCd xBranchCd" +
                              " FROM Employee_Log_Selfie a" +
                                    " LEFT JOIN Branch b ON a.sBranchCd = b.sBranchCd" +
                                 ", Employee_Master001 c" +
@@ -116,11 +117,13 @@ public class Selfie2OB {
                 String employeeId = "";
                 String transactionDate = "";
                 String remarks = "selfie log -";
+                String baseBranch = "";
                 
                 //prepare the entry for business trip
                 while(ind.next()){
                     employeeId = ind.getString("sEmployID");
                     transactionDate = ind.getString("dTransact");
+                    baseBranch = ind.getString("xBranchCd");
                     transactionNo += ", " + SQLUtil.toSQL(ind.getString("sTransNox"));
                     remarks += " " + ind.getString("sBranchCd");
                 }
@@ -141,7 +144,7 @@ public class Selfie2OB {
                             " WHERE sTransNox IN (" + transactionNo.substring(2) + ")";
                     
                     System.out.println(lsSQL);
-                    if (instance.executeQuery(lsSQL, "Employee_Log_Selfie", BRANCHCD, "") <= 0){
+                    if (instance.executeQuery(lsSQL, "Employee_Log_Selfie", baseBranch, "") <= 0){
                         instance.rollbackTrans();
                         logwrapr.severe(lsSQL);
                         logwrapr.severe(instance.getErrMsg());
@@ -167,7 +170,7 @@ public class Selfie2OB {
                             ", dModified = " + SQLUtil.toSQL(instance.getServerDate());
                          
                     System.out.println(lsSQL);
-                    if (instance.executeQuery(lsSQL, "Employee_Business_Trip", BRANCHCD, "") <= 0){
+                    if (instance.executeQuery(lsSQL, "Employee_Business_Trip", baseBranch, "") <= 0){
                         instance.rollbackTrans();
                         logwrapr.severe(lsSQL);
                         logwrapr.severe(instance.getErrMsg());
@@ -180,7 +183,7 @@ public class Selfie2OB {
                             " WHERE sTransNox IN (" + transactionNo.substring(2) + ")";
                     
                     System.out.println(lsSQL);
-                    if (instance.executeQuery(lsSQL, "Employee_Log_Selfie", BRANCHCD, "") <= 0){
+                    if (instance.executeQuery(lsSQL, "Employee_Log_Selfie", baseBranch, "") <= 0){
                         instance.rollbackTrans();
                         logwrapr.severe(lsSQL);
                         logwrapr.severe(instance.getErrMsg());
@@ -193,7 +196,7 @@ public class Selfie2OB {
                                 " AND dTransact = " + SQLUtil.toSQL(transactionDate);
                     
                     System.out.println(lsSQL);
-                    instance.executeQuery(lsSQL, "Employee_Timesheet", BRANCHCD, "");
+                    instance.executeQuery(lsSQL, "Employee_Timesheet", baseBranch, "");
                                        
                     lsSQL = "INSERT INTO Employee_Timesheet SET"  +
                             "  sEmployID = " + SQLUtil.toSQL(employeeId) +
@@ -218,7 +221,7 @@ public class Selfie2OB {
                             ", cInvalidx = '0'";
                     
                     System.out.println(lsSQL);
-                    if (instance.executeQuery(lsSQL, "Employee_Timesheet", BRANCHCD, "") <= 0){
+                    if (instance.executeQuery(lsSQL, "Employee_Timesheet", baseBranch, "") <= 0){
                         instance.rollbackTrans();
                         logwrapr.severe(lsSQL);
                         logwrapr.severe(instance.getErrMsg());

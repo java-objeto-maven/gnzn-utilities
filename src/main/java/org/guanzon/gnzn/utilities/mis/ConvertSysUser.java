@@ -31,9 +31,9 @@ public class ConvertSysUser {
             GRider instance = null;
                     
             if (po_props.getProperty("developer.mode").equals("1")){
-                instance = new GRider("TeleMktg");
+                instance = new GRider("gRider");
         
-                if (!instance.logUser("TeleMktg", "M001000001")){
+                if (!instance.logUser("gRider", "M001000001")){
                     logwrapr.warning(instance.getErrMsg());
                     System.exit(1);
                 }

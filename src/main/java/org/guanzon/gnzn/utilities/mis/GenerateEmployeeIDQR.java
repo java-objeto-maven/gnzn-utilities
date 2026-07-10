@@ -51,7 +51,7 @@ public class GenerateEmployeeIDQR {
                             " FROM Employee_Master001 a" +
                                 ", Client_Master b" +
                             " WHERE a.sEmployID = b.sClientID" +
-                                " AND a.sEmployID IN ('M00106000333')" +
+                                " AND a.sEmployID IN ('M00118002226', 'M03511000680')" +
                                 " AND a.sIDNumber IS NOT NULL" + 
                             " ORDER BY a.sIDNumber";
             
@@ -66,7 +66,7 @@ public class GenerateEmployeeIDQR {
                 String no = rs.getString("sIDNumber");
                 String id = rs.getString("sEmployID");
                 String name = rs.getString("sCompnyNm");
-                String fname = no + " - " + name + " - " + id + ".png"; 
+                String fname = no + " - " + name + " - " + id; 
                 
                 System.out.println(url + encryptBase64(id, "empid"));
                 

@@ -1,0 +1,5 @@
+1	1.00	000000000001	Juan	Santos	Dela Cruz	Dagupan City	na	na	012000000001	BDO	na	na	1		07/03/2026	na	na	na	0	PHP							
+1	1000.00	000000000001			ABC Corporation	Dagupan City	na	na	012000000002	BDO	na	na	0		07/03/2026	na	na	na	1	PHP							
+1	10.00	000000000001			ABC Company Inc.	Dagupan City	na	na	012000000003	BPI	na	na	0		07/03/2026	na	na	na	1	PHP							
+1	20.00	000000000001			XYZ Trading	Dagupan City	na	na	012000000103	BPI	na	na	0		07/03/2026	na	na	na	1	PHP							
+1	100.00	000000000001	Michael	Torres	Cuison	Dagupan City	na	na	012000000077	BDO	na	na	1		07/03/2026	na	na	na	0	PHP							

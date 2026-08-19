@@ -38,30 +38,30 @@ public class AndroidEmployeeRole {
             }
             
             ArrayList<String> laDefaultRoles = new ArrayList<>();
-//            laDefaultRoles.add("PET Manager");
-//            laDefaultRoles.add("Business Trip");
-//            laDefaultRoles.add("Leave Application");
-//            laDefaultRoles.add("Selfie Log");
-//            laDefaultRoles.add("Application Approval");
-//            laDefaultRoles.add("Application History");
-//            laDefaultRoles.add("Company Rule Book");
-//            laDefaultRoles.add("Rules and Policies");
-laDefaultRoles.add("Application Approval");
-laDefaultRoles.add("Application History");
-laDefaultRoles.add("Approval Code");
-laDefaultRoles.add("Business Trip");
-laDefaultRoles.add("By History");
-laDefaultRoles.add("By Name");
-laDefaultRoles.add("By Reference");
-laDefaultRoles.add("By Transaction");
-laDefaultRoles.add("Company Evaluation");
-laDefaultRoles.add("Company Rule Book");
-laDefaultRoles.add("Leave Application");
-laDefaultRoles.add("Manual Log");
-laDefaultRoles.add("PET Manager");
-laDefaultRoles.add("Rules and Policies");
-laDefaultRoles.add("Selfie Log");
-laDefaultRoles.add("SSDD Evaluation");
+            laDefaultRoles.add("PET Manager");
+            laDefaultRoles.add("Business Trip");
+            laDefaultRoles.add("Leave Application");
+            laDefaultRoles.add("Selfie Log");
+            laDefaultRoles.add("Application Approval");
+            laDefaultRoles.add("Application History");
+            laDefaultRoles.add("Company Rule Book");
+            laDefaultRoles.add("Rules and Policies");
+//laDefaultRoles.add("Application Approval");
+//laDefaultRoles.add("Application History");
+//laDefaultRoles.add("Approval Code");
+//laDefaultRoles.add("Business Trip");
+//laDefaultRoles.add("By History");
+//laDefaultRoles.add("By Name");
+//laDefaultRoles.add("By Reference");
+//laDefaultRoles.add("By Transaction");
+//laDefaultRoles.add("Company Evaluation");
+//laDefaultRoles.add("Company Rule Book");
+//laDefaultRoles.add("Leave Application");
+//laDefaultRoles.add("Manual Log");
+//laDefaultRoles.add("PET Manager");
+//laDefaultRoles.add("Rules and Policies");
+//laDefaultRoles.add("Selfie Log");
+//laDefaultRoles.add("SSDD Evaluation");
             
             String lsSQL = "SELECT" +
                                 " a.sUserIDxx" +
@@ -70,7 +70,6 @@ laDefaultRoles.add("SSDD Evaluation");
                                 ", Branch_Others c" +
                             " WHERE a.sEmployNo = b.sEmployID" +
                                 " AND b.sBranchCd = c.sBranchCD" +
-                                " AND a.sUserIDxx = 'GAP022002117'" +
                                 " AND a.sProdctID = 'gRider'" +
                                 " AND b.cRecdStat = '1'";
             

@@ -9,13 +9,13 @@ public class CreateQRWithLogo {
         String invitation = "https://apps.guanzongroup.com.ph/apk/video.mp4";
         String gcircle = "https://apps.guanzongroup.com.ph/apk/gCircle.apk";
         
-        String ssdd = "https://forms.gle/aUDjSAajaXsemndw5";
+        String ssdd = "https://gofile.me/7CIrA/dVvThrOyy";
         
         // ✅ Example with styled label
         generateQR(
                 ssdd,
                 "d:/GGC_Java_Systems/images/logo 2.png",
-                "d:/QR 1.png",
+                "d:/oic.png",
                 600,
                 Color.WHITE,                   // background transparent
                 Color.BLACK,             // outer border color

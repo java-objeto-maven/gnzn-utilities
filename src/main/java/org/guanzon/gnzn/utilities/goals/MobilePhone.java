@@ -18,8 +18,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.SQLUtil;
 
-public class Spareparts {
-    private final static String YEAR = "2023";
+public class MobilePhone {
+    private final static String YEAR = "2026";
     
     // Column header -> DB period code, in one place instead of 14 loose ints + a 15-way switch
     private static final String[] MONTH_HEADERS = {
@@ -55,7 +55,7 @@ public class Spareparts {
                 return;
             }
 
-            File file = new File(path + "/temp/SP Goal " + YEAR + ".xlsx");
+            File file = new File(path + "/temp/MP GOAL 2023 TO 2025.xlsx");
             if (!file.exists()) {
                 System.out.println("File not found: " + file.getAbsolutePath());
                 System.exit(1);
@@ -68,7 +68,7 @@ public class Spareparts {
             try (FileInputStream fis = new FileInputStream(file);
                  Workbook workbook = new XSSFWorkbook(fis)) {
 
-                Sheet sheet = workbook.getSheetAt(0);
+                Sheet sheet = workbook.getSheetAt(3);
                 Row headerRow = sheet.getRow(0);
 
                 // Build header index once instead of a 15-branch switch per column
@@ -139,13 +139,13 @@ public class Spareparts {
                                     ? monthCell.getNumericCellValue()
                                     : 0d;
 
-                            String upsertSql = "INSERT INTO MC_Branch_Performance SET"
+                            String upsertSql = "INSERT INTO MP_Branch_Performance SET"
                                                     + "  sBranchCd = " + sBranchCdSql
                                                     + ", sPeriodxx = " + SQLUtil.toSQL(YEAR + MONTH_PERIODS[m])
-                                                    + ", nSPGoalxx = " + goal
+                                                    + ", nCPGoalxx = " + goal
                                                     + ", dModified = " + serverDateSql
                                                 + " ON DUPLICATE KEY UPDATE "
-                                                    + " nSPGoalxx = " + goal
+                                                    + " nCPGoalxx = " + goal
                                                     + ", dModified = " + serverDateSql;
 
                             if (instance.executeQuery(upsertSql, "MC_Branch_Performance", instance.getBranchCode(), "") <= 0) {

@@ -1,0 +1,3 @@
+2	15000.00	000000000001	Juan	Santos	Dela Cruz	123 Rizal Street	Barangay Poblacion	Dagupan City	012000000001	BDO	SM City Dagupan, Dagupan City		0		04/12/1990	Dagupan City	Filipino	Employee	0	PHP							
+2	48250.75	000000000001			ABC Trading Corporation	456 Quezon Avenue	Barangay San Vicente	Dagupan City	012000000002	BPI	BPI Dagupan Branch, Dagupan City		1		09/01/2005	Pangasinan	Filipino	Trading	1	PHP							
+0	1250000.00	000000000001	Michael	Torres	Cuison	789 Burgos Street	Barangay Bonuan	Dagupan City	012000000077	BDO	SM City Dagupan, Dagupan City		0		01/20/1985	Dagupan City	Filipino	Business Owner	0	PHP							SALARY

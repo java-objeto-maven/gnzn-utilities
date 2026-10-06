@@ -8,7 +8,7 @@ import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
 
 public class CallLeads {
-    enum Type{
+    enum Type {
         NO_SCHED,
         NO_SCHED_BACKDATE,
         WITH_TARGET_ONLY,
@@ -17,29 +17,29 @@ public class CallLeads {
         WITH_TARGET_BACKDATE,
         WITH_FOLLOW_UP_ONLY_NO_AGENT
     }
-    
+
     GRider _instance;
     String _network;
-    
+
     int _fu_backdate;
     int _ca_grace_period;
     int _leads_inquiry_first_priority;
     int _leads_inquiry_grace_period;
-    
-    public CallLeads(GRider foValue){
+
+    public CallLeads(GRider foValue) {
         _instance = foValue;
         _network = "";
-        
+
         _fu_backdate = Integer.parseInt(System.getProperty("leads.follow.up.backdate"));
         _ca_grace_period = Integer.parseInt(System.getProperty("leads.ca.grace.period"));
         _leads_inquiry_first_priority = Integer.parseInt(System.getProperty("leads.inquiry.first"));
         _leads_inquiry_grace_period = Integer.parseInt(System.getProperty("leads.inquiry.grace.period"));
     }
-    
-    public void setNetworkProvider(String lsValue){
+
+    public void setNetworkProvider(String lsValue) {
         _network = lsValue;
     }
-    
+
     public boolean GetNextCustomer() throws SQLException{
         //get mc product inquiry (Inquiries)
         String lsSQL;
@@ -108,53 +108,57 @@ public class CallLeads {
         return false;
     }
     
-    
-    private boolean addToLeads(ResultSet foRS) throws SQLException{
+
+       private boolean addToLeads(ResultSet foRS) throws SQLException {
         String lsSQL;
         String lsSourceCd;
         String lsSQLUpdate;
         String lsNetwork;
-        
-        switch (foRS.getString("sTableNme")){
+
+        switch (foRS.getString("sTableNme")) {
             case "MC_Product_Inquiry":
                 lsSourceCd = "INQR";
-                
-                lsSQLUpdate = "UPDATE MC_Product_Inquiry SET" + 
-                                    "  cTranStat = '1'" + 
-                                    ", sCreatedx = " + SQLUtil.toSQL(_instance.getUserID()) +
-                                " WHERE sTransNox = " + SQLUtil.toSQL(foRS.getString("sTransNox"));
+
+                lsSQLUpdate = "UPDATE MC_Product_Inquiry SET"
+                                    + "  cTranStat = '1'"
+                                    + ", sCreatedx = " + SQLUtil.toSQL(_instance.getUserID())
+                                + " WHERE sTransNox = " + SQLUtil.toSQL(foRS.getString("sTransNox"))
+                                      + " AND cTranStat = '0'";
                 break;
             case "MC_Credit_Application":
                 lsSourceCd = "MCCA";
-                
-                lsSQLUpdate = "UPDATE MC_Credit_Application SET" + 
-                                    "  cTLMStatx = '1'" + 
-                                    ", sAgentIDx = " + SQLUtil.toSQL(_instance.getUserID()) +
-                                " WHERE sTransNox = " + SQLUtil.toSQL(foRS.getString("sTransNox"));
+
+                lsSQLUpdate = "UPDATE MC_Credit_Application SET"
+                                    + "  cTLMStatx = '1'"
+                                    + ", sTLMAgent = " + SQLUtil.toSQL(_instance.getUserID())
+                              + " WHERE sTransNox = " + SQLUtil.toSQL(foRS.getString("sTransNox"))
+                                 + " AND cTLMStatx = '0'";
                 break;
             case "MC_Referral":
                 lsSourceCd = "RFRL";
-                
-                lsSQLUpdate = "UPDATE MC_Referral SET" + 
-                                    "  cTranStat = '1'" + 
-                                    ", sAgentIDx = " + SQLUtil.toSQL(_instance.getUserID()) +
-                                " WHERE sTransNox = " + SQLUtil.toSQL(foRS.getString("sTransNox"));
+
+                lsSQLUpdate = "UPDATE MC_Referral SET"
+                                        + "  cTranStat = '1'"
+                                        + ", sAgentIDx = " + SQLUtil.toSQL(_instance.getUserID())
+                            + " WHERE sTransNox = " + SQLUtil.toSQL(foRS.getString("sTransNox"))
+                                      + " AND cTranStat = '0'";
                 break;
             case "TLM_Client":
                 lsSourceCd = "TLMC";
-                
-                lsSQLUpdate = "UPDATE TLM_Client SET" + 
-                                    "  cTranStat = '1'" + 
-                                    ", sAgentIDx = " + SQLUtil.toSQL(_instance.getUserID()) +
-                                " WHERE sTransNox = " + SQLUtil.toSQL(foRS.getString("sTransNox"));
+
+                lsSQLUpdate = "UPDATE TLM_Client SET"
+                                    + "  cTranStat = '1'"
+                                    + ", sAgentIDx = " + SQLUtil.toSQL(_instance.getUserID())
+                          + " WHERE sClientID = " + SQLUtil.toSQL(foRS.getString("sClientID"))
+                                     + " AND cTranStat = '0'";
                 break;
             default:
                 System.err.println("Source table is not registered...");
                 return false;
         }
-        
+
         lsNetwork = CommonUtils.classifyNetwork(foRS.getString("sMobileNo"));
-        
+
         if (!lsNetwork.equals(foRS.getString("cSubscrbr"))) {
             //fix the assigned network on Client Mobile for data integrity first
             lsSQL = "UPDATE Client_Mobile SET" +
@@ -162,14 +166,22 @@ public class CallLeads {
                     "WHERE sClientID = " + SQLUtil.toSQL(foRS.getString("sClientID")) +
                         " AND sMobileNo = " + SQLUtil.toSQL(foRS.getString("sMobileNo"));
             
-            if (_instance.executeQuery(lsSQL, "Client_Mobile", _instance.getBranchCode(), "") <= 0){
+            if (_instance.executeQuery(lsSQL, "Client_Mobile", _instance.getBranchCode(), "") <= 0) {
                 System.err.println("Unable to execute sql.");
                 System.exit(2);
             }
-            
+
             return false;
         } else {
             _instance.beginTrans();
+            
+            
+            //Update the Record First to avoid getting by other agents
+            if (_instance.executeQuery(lsSQLUpdate, foRS.getString("sTableNme"), _instance.getBranchCode(), "") <= 0) {
+                System.err.println("Unable to execute sql.");
+                _instance.rollbackTrans();
+                return false;
+            }
             
             lsSQL = "INSERT INTO Call_Outgoing SET" +
                     "  sTransNox = " + SQLUtil.toSQL(MiscUtil.getNextCode("Call_Outgoing", "sTransNox", true, _instance.getConnection(), _instance.getBranchCode())) +
@@ -189,25 +201,19 @@ public class CallLeads {
                     ", nSMSSentx = 0" + 
                     ", sModified = " + SQLUtil.toSQL(_instance.getUserID()) +
                     ", dModified = " + SQLUtil.toSQL(_instance.getServerDate());
-            
-            if (_instance.executeQuery(lsSQL, "Call_Outgoing", _instance.getBranchCode(), "") <= 0){
+
+            if (_instance.executeQuery(lsSQL, "Call_Outgoing", _instance.getBranchCode(), "") <= 0) {
                 System.err.println("Unable to execute sql.");
                 _instance.rollbackTrans();
                 return false;
             }
-            
-            if (_instance.executeQuery(lsSQLUpdate, foRS.getString("sTableNme"), _instance.getBranchCode(), "") <= 0){
-                System.err.println("Unable to execute sql.");
-                _instance.rollbackTrans();
-                return false;
-            }
-            
+
             _instance.commitTrans();
         }
-        
+
         return true;
     }
-    
+
     private String getSQ_ProductInquiries(Type loType){
         switch (loType){
             case WITH_TARGET_ONLY:
@@ -232,7 +238,7 @@ public class CallLeads {
                     " AND dTargetxx >= " + SQLUtil.toSQL(CommonUtils.dateAdd(_instance.getServerDate(), _fu_backdate)) +
                     " AND a.dFollowUp IS NULL" + 
                     " AND a.cTranStat = '0'" +
-                    (_network.equals("3") ? "" : " AND c.cSubscrbr = " + SQLUtil.toSQL(_network)) +
+                    " AND c.cSubscrbr = " + SQLUtil.toSQL(_network) +
                 " ORDER BY dTargetxx DESC" +
                 " LIMIT 1";
             case WITH_TARGET_AGENT:
@@ -258,7 +264,7 @@ public class CallLeads {
                     " AND a.sCreatedx = " + SQLUtil.toSQL(_instance.getUserID()) +
                     " AND a.dFollowUp IS NULL" + 
                     " AND a.cTranStat = '0'" +
-                    (_network.equals("3") ? "" : " AND c.cSubscrbr = " + SQLUtil.toSQL(_network)) +
+                    " AND c.cSubscrbr = " + SQLUtil.toSQL(_network) +
                 " ORDER BY dTargetxx DESC" +
                 " LIMIT 1";
             case WITH_TARGET_BACKDATE:
@@ -283,7 +289,7 @@ public class CallLeads {
                     " AND dTargetxx < " + SQLUtil.toSQL(CommonUtils.dateAdd(_instance.getServerDate(), _fu_backdate)) +
                     " AND a.dFollowUp IS NULL" + 
                     " AND a.cTranStat = '0'" +
-                    (_network.equals("3") ? "" : " AND c.cSubscrbr = " + SQLUtil.toSQL(_network)) +
+                    " AND c.cSubscrbr = " + SQLUtil.toSQL(_network) +
                 " ORDER BY dTargetxx DESC" +
                 " LIMIT 1";
             case WITH_TARGET_AGENT_BACKDATE:
@@ -309,7 +315,7 @@ public class CallLeads {
                     " AND a.sCreatedx = " + SQLUtil.toSQL(_instance.getUserID()) +
                     " AND a.dFollowUp IS NULL" + 
                     " AND a.cTranStat = '0'" +
-                    (_network.equals("3") ? "" : " AND c.cSubscrbr = " + SQLUtil.toSQL(_network)) +
+                    " AND c.cSubscrbr = " + SQLUtil.toSQL(_network) +
                 " ORDER BY dTargetxx DESC" +
                 " LIMIT 1";
             case WITH_FOLLOW_UP_ONLY_NO_AGENT:
@@ -332,7 +338,7 @@ public class CallLeads {
                     " AND a.cTranStat = '0'" + 
                     " AND a.dFollowUp <= CURRENT_TIMESTAMP()" +
                     " AND IFNULL(a.sCreatedx, '') = ''" +
-                    (_network.equals("3") ? "" : " AND c.cSubscrbr = " + SQLUtil.toSQL(_network)) +
+                    " AND c.cSubscrbr = " + SQLUtil.toSQL(_network) +
                 " ORDER BY dFollowUp DESC" +
                 " LIMIT 1";
             case NO_SCHED:
@@ -357,7 +363,7 @@ public class CallLeads {
                     " AND a.dFollowUp IS NULL" + 
                     " AND a.dTransact BETWEEN " + SQLUtil.toSQL(CommonUtils.dateAdd(_instance.getServerDate(), _leads_inquiry_first_priority)) +
                         " AND " + SQLUtil.toSQL(CommonUtils.dateAdd(_instance.getServerDate(), _leads_inquiry_grace_period)) +
-                    (_network.equals("3") ? "" : " AND c.cSubscrbr = " + SQLUtil.toSQL(_network)) +
+                    " AND c.cSubscrbr = " + SQLUtil.toSQL(_network) +
                 " ORDER BY dTransact DESC" +
                 " LIMIT 1";
             case NO_SCHED_BACKDATE:
@@ -382,7 +388,7 @@ public class CallLeads {
                         " AND a.dFollowUp IS NULL" + 
                         " AND a.dTransact >= '2024-01-01 00:00:01'" +
                         " AND a.dTransact < " + SQLUtil.toSQL(CommonUtils.dateAdd(_instance.getServerDate(), _leads_inquiry_first_priority)) +
-                        (_network.equals("3") ? "" : " AND c.cSubscrbr = " + SQLUtil.toSQL(_network)) +
+                        " AND c.cSubscrbr = " + SQLUtil.toSQL(_network) +
                     " ORDER BY dTransact DESC" +
                     " LIMIT 1";
             default:
@@ -412,7 +418,7 @@ public class CallLeads {
                     " AND a.dAppliedx >= DATE_SUB(NOW(), INTERVAL 1 MONTH)" +
                     " AND a.dAppliedx <= " + SQLUtil.toSQL(MiscUtil.dateAdd(_instance.getServerDate(), _ca_grace_period)) + 
                     " AND a.dFollowUp IS NULL" +
-                    (_network.equals("3") ? "" : " AND c.cSubscrbr = " + SQLUtil.toSQL(_network)) +
+                    " AND c.cSubscrbr = " + SQLUtil.toSQL(_network) +
                 " ORDER BY a.dAppliedx" +
                 " LIMIT 1";
     }
@@ -436,7 +442,7 @@ public class CallLeads {
                         " AND a.dFollowUp IS NOT NULL" +
                         " AND a.cTranStat = '0'" +
                         " AND a.sCreatedx = " + SQLUtil.toSQL(_instance.getUserID()) +
-                        (_network.equals("3") ? "" : " AND c.cSubscrbr = " + SQLUtil.toSQL(_network)) +
+                        " AND c.cSubscrbr = " + SQLUtil.toSQL(_network) +
                     " UNION" +
                     " SELECT" +
                         "  b.sMobileNo" +
@@ -455,7 +461,7 @@ public class CallLeads {
                         " AND a.dFollowUp IS NOT NULL" +
                         " AND a.cTLMStatx = '0'" +
                         " AND a.sTLMAgent = " + SQLUtil.toSQL(_instance.getUserID()) +
-                        (_network.equals("3") ? "" : " AND c.cSubscrbr = " + SQLUtil.toSQL(_network)) +
+                        " AND c.cSubscrbr = " + SQLUtil.toSQL(_network) +
                     " UNION" +
                     " SELECT" +
                         "  b.sMobileNo" +
@@ -474,7 +480,7 @@ public class CallLeads {
                         " AND a.dFollowUp IS NOT NULL" +
                         " AND a.cTranStat = '0'" +
                         " AND a.sAgentIDx = " + SQLUtil.toSQL(_instance.getUserID()) +
-                        (_network.equals("3") ? "" : " AND c.cSubscrbr = " + SQLUtil.toSQL(_network)) +
+                        " AND c.cSubscrbr = " + SQLUtil.toSQL(_network) +
                     " UNION" +
                     " SELECT" +
                         "  b.sMobileNo" +
@@ -492,7 +498,7 @@ public class CallLeads {
                     " WHERE a.sClientID = b.sClientID" +
                         " AND a.dFollowUp IS NOT NULL" +
                         " AND a.cTranStat = '0'" +
-                        (_network.equals("3") ? "" : " AND c.cSubscrbr = " + SQLUtil.toSQL(_network)) +
+                        " AND c.cSubscrbr = " + SQLUtil.toSQL(_network) +
                         " AND a.sAgentIDx  = " + SQLUtil.toSQL(_instance.getUserID()) + ") a" +                        
                 " WHERE dFollowUp >= " + SQLUtil.toSQL(CommonUtils.dateAdd(_instance.getServerDate(), _fu_backdate)) +
                     " AND dFollowUp <= CURRENT_TIMESTAMP()" + 
@@ -519,7 +525,7 @@ public class CallLeads {
                         " AND a.dFollowUp IS NOT NULL" +
                         " AND a.cTranStat = '0'" +
                         " AND a.sCreatedx = " + SQLUtil.toSQL(_instance.getUserID()) +
-                        (_network.equals("3") ? "" : " AND c.cSubscrbr = " + SQLUtil.toSQL(_network)) +
+                        " AND c.cSubscrbr = " + SQLUtil.toSQL(_network) +
                     " UNION" +
                     " SELECT" +
                         "  b.sMobileNo" +
@@ -538,7 +544,7 @@ public class CallLeads {
                         " AND a.dFollowUp IS NOT NULL" +
                         " AND a.cTLMStatx = '0'" +
                         " AND a.sTLMAgent = " + SQLUtil.toSQL(_instance.getUserID()) +
-                        (_network.equals("3") ? "" : " AND c.cSubscrbr = " + SQLUtil.toSQL(_network)) +
+                        " AND c.cSubscrbr = " + SQLUtil.toSQL(_network) +
                     " UNION" +
                     " SELECT" +
                         "  b.sMobileNo" +
@@ -557,7 +563,7 @@ public class CallLeads {
                         " AND a.dFollowUp IS NOT NULL" +
                         " AND a.cTranStat = '0'" +
                         " AND a.sAgentIDx = " + SQLUtil.toSQL(_instance.getUserID()) +
-                        (_network.equals("3") ? "" : " AND c.cSubscrbr = " + SQLUtil.toSQL(_network)) +
+                        " AND c.cSubscrbr = " + SQLUtil.toSQL(_network) +
                     " UNION" +
                     " SELECT" +
                         "  b.sMobileNo" +
@@ -575,7 +581,7 @@ public class CallLeads {
                     " WHERE a.sClientID = b.sClientID" +
                         " AND a.dFollowUp IS NOT NULL" +
                         " AND a.cTranStat = '0'" +
-                        (_network.equals("3") ? "" : " AND c.cSubscrbr = " + SQLUtil.toSQL(_network)) +
+                        " AND c.cSubscrbr = " + SQLUtil.toSQL(_network) +
                         " AND a.sAgentIDx  = " + SQLUtil.toSQL(_instance.getUserID()) + ") a" +                        
                 " WHERE dFollowUp >= '2024-01-0 00:00:01'" +
                     " AND dFollowUp <= " + SQLUtil.toSQL(CommonUtils.dateAdd(_instance.getServerDate(), _fu_backdate)) +

@@ -4,7 +4,7 @@ import org.guanzon.gnzn.utilities.tlm.CreateLeads;
 
 public class testCreateLeads {
     public static void main(String[] args) {
-        String arg[] = {"M0T1220001", "1"};
+        String arg[] = {"M0T1260001", "1"};
         CreateLeads.main(arg);
     }
 }

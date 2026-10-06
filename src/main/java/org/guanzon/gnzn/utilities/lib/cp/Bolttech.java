@@ -395,6 +395,7 @@ public class Bolttech {
                 }
             }
         } catch (JSchException | IOException | SQLException e) {
+            e.printStackTrace();
             loJSON = new JSONObject();
             loJSON.put("result", "error");
             loJSON.put("message", e.getMessage());
@@ -573,6 +574,12 @@ public class Bolttech {
         System.setProperty("bolttech.user", props.getProperty("bolttech.user"));
         System.setProperty("bolttech.rdir", props.getProperty("bolttech.rdir"));
         System.setProperty("bolttech.pkey", System.getProperty("sys.default.path.config") + "/config/" + props.getProperty("bolttech.pkey"));
+    
+        System.out.println(System.getProperty("bolttech.port"));
+        System.out.println(System.getProperty("bolttech.host"));
+        System.out.println(System.getProperty("bolttech.user"));
+        System.out.println(System.getProperty("bolttech.rdir"));
+        System.out.println(System.getProperty("bolttech.pkey"));
     }
     
     private String getSQ_Master(){

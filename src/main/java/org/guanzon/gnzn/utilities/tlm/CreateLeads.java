@@ -48,11 +48,60 @@ public class CreateLeads {
             CallLeads trans = new CallLeads(instance);
             trans.setNetworkProvider(args[1]);
             
-            if (trans.GetNextCustomer()){
-                System.out.println("New customer added to leads.");
-            }else {
-                System.err.println("No customer was retreived.");
-                System.exit(1);
+                        
+            switch (args[1]){
+                case "1":
+                case "2":
+                    trans.setNetworkProvider("1");
+
+                    if (trans.GetNextCustomer()){
+                        System.out.println("New customer added to leads.");
+                        System.exit(0);
+                    } else {
+                        trans.setNetworkProvider("2");
+
+                        if (trans.GetNextCustomer()){
+                            System.out.println("New customer added to leads.");
+                            System.exit(0);
+                        } else {
+                            System.err.println("No customer was retreived.");
+                            System.exit(1);
+                        }
+                    }
+                    break;
+                case "3":
+                    trans.setNetworkProvider("3");
+
+                    if (trans.GetNextCustomer()){
+                        System.out.println("New customer added to leads.");
+                        System.exit(0);
+                    } else {
+                        trans.setNetworkProvider("1");
+
+                        if (trans.GetNextCustomer()){
+                            System.out.println("New customer added to leads.");
+                            System.exit(0);
+                        }else {
+                            trans.setNetworkProvider("2");
+
+                            if (trans.GetNextCustomer()){
+                                System.out.println("New customer added to leads.");
+                                System.exit(0);
+                            } else {
+                                System.err.println("No customer was retreived.");
+                                System.exit(1);
+                            }
+                        }
+                    }
+                    break;
+                default:
+                    if (trans.GetNextCustomer()){
+                        System.out.println("New customer added to leads.");
+                        System.exit(0);
+                    }else {
+                        System.err.println("No customer was retreived.");
+                        System.exit(1);
+                    }
             }
             
         } catch (IOException |SQLException e) {
